@@ -7,16 +7,16 @@ const { searchPodcast, fetchEpisodes } = require('../services/podcastService');
  */
 router.post('/search', async (req, res) => {
   try {
-    const { podcastName } = req.body;
+    const { podcastName, limit } = req.body;
     if (!podcastName) {
       return res.status(400).json({ error: 'Podcast name is required' });
     }
 
-    const podcast = await searchPodcast(podcastName);
-    if (podcast) {
-      return res.json({ podcast });
+    const podcasts = await searchPodcast(podcastName, limit || 10);
+    if (podcasts && podcasts.length > 0) {
+      return res.json({ podcasts });
     } else {
-      return res.status(404).json({ error: `No podcast found with the name '${podcastName}' on Apple Podcasts` });
+      return res.status(404).json({ error: `No podcasts found with the name '${podcastName}' on Apple Podcasts` });
     }
   } catch (error) {
     console.error('Error fetching data from Apple Podcasts API:', error.message);
@@ -29,12 +29,12 @@ router.post('/search', async (req, res) => {
  */
 router.post('/episodes', async (req, res) => {
   try {
-    const { feedUrl } = req.body;
+    const { feedUrl, limit } = req.body;
     if (!feedUrl) {
       return res.status(400).json({ error: 'Feed URL is required' });
     }
 
-    const episodes = await fetchEpisodes(feedUrl, 5);
+    const episodes = await fetchEpisodes(feedUrl, limit || 0);
     return res.json({ episodes });
   } catch (error) {
     console.error('Error fetching episodes:', error.message);

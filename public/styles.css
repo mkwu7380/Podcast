@@ -1,93 +1,121 @@
 body {
-  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f8f8fa;
-  color: #2c3e50;
+  background: linear-gradient(135deg, #f8fafc 0%, #f7f5f0 100%);
+  color: #3d3d3d;
+  min-height: 100vh;
 }
 
 .container {
   max-width: 900px;
-  margin: 0 auto;
-  padding: 25px;
+  margin: 40px auto 0 auto;
+  padding: 35px 30px 35px 30px;
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 6px 32px rgba(180, 170, 140, 0.09), 0 1.5px 6px rgba(80, 70, 44, 0.07);
 }
 
 h1 {
-  color: #34495e;
+  color: #b48a2b;
   text-align: center;
-  font-size: 2.5em;
-  margin-bottom: 30px;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+  font-size: 2.8em;
+  margin-bottom: 32px;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 12px rgba(180,170,44,0.07);
 }
 
 .search-container {
   display: flex;
-  margin-bottom: 25px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  border-radius: 25px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 14px rgba(180,170,140,0.08);
+  border-radius: 30px;
   overflow: hidden;
+  background: #f7f5f0;
 }
 
 .search-container input {
   flex: 1;
-  padding: 12px 20px;
-  font-size: 16px;
+  padding: 16px 24px;
+  font-size: 18px;
   border: none;
   background-color: #fff;
   outline: none;
+  border-radius: 0;
+  transition: background 0.2s;
+}
+.search-container input:focus {
+  background: #f3ecd4;
 }
 
 .search-container button {
-  padding: 12px 25px;
-  font-size: 16px;
-  background-color: #e74c3c;
-  color: white;
+  background: linear-gradient(90deg, #b48a2b 0%, #e6c77d 100%);
+  color: #fff;
   border: none;
+  padding: 0 36px;
+  font-size: 1.1em;
+  font-weight: 600;
+  border-radius: 0 30px 30px 0;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 12px rgba(180,170,140,0.09);
 }
-
 .search-container button:hover {
-  background-color: #c0392b;
+  background: linear-gradient(90deg, #e6c77d 0%, #b48a2b 100%);
+  color: #fff;
 }
 
 .podcast-info {
-  background-color: white;
-  padding: 25px;
-  border-radius: 10px;
-  box-shadow: 0 3px 15px rgba(0,0,0,0.1);
-  margin-bottom: 25px;
-}
-
-.podcast-info img {
-  max-width: 250px;
-  display: block;
-  margin: 0 auto 20px;
-  border-radius: 10px;
-  box-shadow: 0 5px 10px rgba(0,0,0,0.2);
-}
-
-.podcast-info h2 {
-  margin-top: 0;
-  color: #34495e;
-  font-size: 1.8em;
+  background: #f9f7f3;
+  padding: 28px;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(180,170,140,0.07);
+  margin-bottom: 28px;
   text-align: center;
 }
-
+.podcast-info img {
+  max-width: 220px;
+  display: block;
+  margin: 0 auto 18px auto;
+  border-radius: 16px;
+  box-shadow: 0 3px 14px rgba(180,170,140,0.13);
+}
+.podcast-info h2 {
+  margin-top: 0;
+  color: #b48a2b;
+  font-size: 2em;
+  text-align: center;
+}
 .podcast-info p {
-  line-height: 1.6;
+  line-height: 1.7;
   margin: 10px 0;
+  font-size: 1.08em;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #b48a2b;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: color 0.2s;
+}
+.back-btn:hover {
+  color: #e6c77d;
+  text-decoration: underline;
 }
 
 .episodes {
-  background-color: white;
+  background-color: #fff;
   padding: 25px;
   border-radius: 10px;
   box-shadow: 0 3px 15px rgba(0,0,0,0.1);
 }
 
 .episodes h2 {
-  color: #34495e;
+  color: #b48a2b;
   margin-top: 0;
   font-size: 1.5em;
   border-bottom: 2px solid #ecf0f1;
@@ -113,7 +141,7 @@ h1 {
 
 .episode h3 {
   margin-top: 0;
-  color: #e74c3c;
+  color: #c0392b;
   font-size: 1.2em;
 }
 
@@ -123,7 +151,7 @@ h1 {
 }
 
 .episode a {
-  color: #3498db;
+  color: #b48a2b;
   text-decoration: none;
   font-weight: bold;
 }
@@ -133,10 +161,111 @@ h1 {
 }
 
 .error {
-  color: #e74c3c;
+  color: #c0392b;
   text-align: center;
   font-weight: bold;
-  background-color: #fadbd8;
+  background-color: #ffe5d0;
   padding: 10px;
-  border-radius: 5px;
+  border-radius: 7px;
+  margin: 10px 0;
+}
+
+/* Podcast List Styles */
+.podcast-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 24px 0;
+}
+.podcast-list-item {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(180, 170, 140, 0.07);
+  padding: 18px 20px;
+  transition: box-shadow 0.2s;
+}
+.podcast-list-item:hover {
+  box-shadow: 0 4px 18px rgba(180,170,140,0.13);
+}
+.podcast-list-artwork img {
+  width: 70px;
+  height: 70px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(180,170,140,0.07);
+}
+.podcast-list-info {
+  flex: 1;
+  margin-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.podcast-list-title {
+  font-size: 1.18em;
+  color: #b48a2b;
+  font-weight: bold;
+}
+.podcast-list-artist {
+  font-size: 1em;
+  color: #888;
+}
+.podcast-list-genre {
+  font-size: 0.95em;
+  color: #b48a2b;
+}
+.podcast-list-select {
+  margin-top: 8px;
+  padding: 7px 18px;
+  background: #b48a2b;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.2s;
+}
+.podcast-list-select:hover {
+  background: #e6c77d;
+}
+.paging-controls button {
+  margin: 0 8px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: #e0e7ef;
+  border: none;
+  color: #b48a2b;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.paging-controls button:hover {
+  background: #b2c7df;
+}
+
+/* Shimmer Loading */
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e2e2e2 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite linear;
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.loading-placeholder {
+  border-radius: 10px;
+  margin-bottom: 16px;
+  height: 74px;
+  width: 100%;
+  display: block;
+}
+.loading-episode {
+  border-radius: 7px;
+  margin-bottom: 16px;
+  height: 60px;
+  width: 100%;
+  display: block;
 }
