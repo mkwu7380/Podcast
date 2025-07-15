@@ -1,193 +1,416 @@
-// Hide episodes div initially
-const episodesDiv = document.getElementById('episodes');
-episodesDiv.style.display = 'none';
+const { useState, useRef } = React;
 
-async function searchPodcast(page = 1, pageSize = 5) {
-  const podcastName = document.getElementById('podcastSearch').value.trim();
-  const podcastInfoDiv = document.getElementById('podcastInfo');
-  // Show episodes div only when searching
-  episodesDiv.style.display = '';
-  // Clear previous results
-  podcastInfoDiv.innerHTML = '';
-  episodesDiv.innerHTML = '';
+/**
+ * Main App Component - Modern Dashboard Layout with Sidebar Navigation
+ * Features responsive design, improved UX, and modular component organization
+ */
+function App() {
+  // State management
+  const [activeView, setActiveView] = useState('search');
+  const [podcastName, setPodcastName] = useState('');
+  const [podcasts, setPodcasts] = useState([]);
+  const [podcastPage, setPodcastPage] = useState(1);
+  const [selectedPodcast, setSelectedPodcast] = useState(null);
+  const [episodes, setEpisodes] = useState([]);
+  const [episodePage, setEpisodePage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [transcript, setTranscript] = useState('');
+  const [rtTranscript, setRtTranscript] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const audioRef = useRef();
 
-  if (!podcastName) {
-    podcastInfoDiv.innerHTML = '<p class="error">Please enter a podcast name.</p>';
-    // Hide episodes div if no podcast name
-    episodesDiv.style.display = 'none';
-    return;
-  }
+  // Constants
+  const PODCAST_PAGE_SIZE = 8;
+  const EPISODES_PER_PAGE = 10;
 
-  try {
-    // Show shimmer loading for podcast list
-    podcastInfoDiv.innerHTML = '<div class="podcast-list">' + Array(pageSize).fill('<div class="loading-placeholder shimmer"></div>').join('') + '</div>';
-    episodesDiv.style.display = 'none';
-    // Fetch podcasts
-    const searchResponse = await fetch('/api/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ podcastName, limit: 50 })
-    });
+  // Navigation items
+  const navItems = [
+    { id: 'search', label: 'Search Podcasts', icon: '🔍', active: activeView === 'search' },
+    { id: 'transcribe', label: 'Audio Transcription', icon: '🎤', active: activeView === 'transcribe' },
+    ...(selectedPodcast ? [{ id: 'details', label: 'Podcast Details', icon: '📱', active: activeView === 'details' }] : [])
+  ];
 
-    const searchData = await searchResponse.json();
-
-    if (searchResponse.ok) {
-      const podcasts = searchData.podcasts;
-      if (podcasts.length === 0) {
-        podcastInfoDiv.innerHTML = '<p class="error">No podcasts found.</p>';
-        // Hide episodes div if no podcasts found
-        episodesDiv.style.display = 'none';
-        return;
-      }
-      // Paging logic
-      const totalPages = Math.ceil(podcasts.length / pageSize);
-      const startIdx = (page - 1) * pageSize;
-      const endIdx = startIdx + pageSize;
-      const pagedPodcasts = podcasts.slice(startIdx, endIdx);
-      // List all podcast names as clickable items
-      podcastInfoDiv.innerHTML = '<h2>Select a Podcast</h2>';
-      const list = document.createElement('div');
-      list.className = 'podcast-list';
-      pagedPodcasts.forEach((podcast, idx) => {
-        const item = document.createElement('div');
-        item.className = 'podcast-list-item';
-        item.innerHTML = `
-          <div class="podcast-list-artwork"><img src="${podcast.artworkUrl600}" alt="${podcast.trackName}"/></div>
-          <div class="podcast-list-info">
-            <div class="podcast-list-title">${podcast.trackName}</div>
-            <div class="podcast-list-artist">by ${podcast.artistName}</div>
-            <div class="podcast-list-genre">${podcast.primaryGenreName}</div>
-            <button class="podcast-list-select" data-idx="${startIdx + idx}">Details</button>
-          </div>
-        `;
-        list.appendChild(item);
-      });
-      podcastInfoDiv.appendChild(list);
-      // Paging controls
-      const pagingDiv = document.createElement('div');
-      pagingDiv.className = 'paging-controls';
-      if (page > 1) {
-        const prevBtn = document.createElement('button');
-        prevBtn.textContent = 'Previous';
-        prevBtn.onclick = () => searchPodcast(page - 1, pageSize);
-        pagingDiv.appendChild(prevBtn);
-      }
-      pagingDiv.appendChild(document.createTextNode(` Page ${page} of ${totalPages} `));
-      if (page < totalPages) {
-        const nextBtn = document.createElement('button');
-        nextBtn.textContent = 'Next';
-        nextBtn.onclick = () => searchPodcast(page + 1, pageSize);
-        pagingDiv.appendChild(nextBtn);
-      }
-      podcastInfoDiv.appendChild(pagingDiv);
-      // Hide episodes div until a podcast is selected
-      episodesDiv.style.display = 'none';
-      // Handle click on a podcast Details button to show details and fetch episodes
-      list.addEventListener('click', async (e) => {
-        if (e.target.classList.contains('podcast-list-select')) {
-          const idx = e.target.getAttribute('data-idx');
-          const podcast = podcasts[idx];
-          // Back button
-          podcastInfoDiv.innerHTML = `
-            <button id="backToListBtn" class="back-btn">&larr; Back</button>
-            <h2>${podcast.trackName}</h2>
-            <img src="${podcast.artworkUrl600}" alt="${podcast.trackName} Artwork">
-            <p><strong>Artist:</strong> ${podcast.artistName}</p>
-            <p><strong>Genre:</strong> ${podcast.primaryGenreName}</p>
-            <p><strong>Total Episodes:</strong> ${podcast.trackCount}</p>
-            <p><strong>Apple Podcasts:</strong> <a href="${podcast.trackViewUrl}" target="_blank">View on Apple Podcasts</a></p>
-          `;
-          document.getElementById('backToListBtn').onclick = () => {
-            podcastInfoDiv.innerHTML = '';
-            episodesDiv.innerHTML = '';
-            episodesDiv.style.display = 'none';
-            document.getElementById('podcastSearch').value = '';
-          };
-          // Add paging for episodes
-          let allEpisodes = [];
-          let episodePage = 1;
-          const episodesPerPage = 5;
-          async function fetchAndRenderEpisodes(page) {
-            // Add shimmer loading for episodes
-            episodesDiv.innerHTML = Array(episodesPerPage).fill('<div class="loading-episode shimmer"></div>').join('');
-            episodesDiv.style.display = '';
-            if (allEpisodes.length === 0) {
-              const episodesResponse = await fetch('/api/episodes', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ feedUrl: podcast.feedUrl, limit: 0 })
-              });
-              const episodesData = await episodesResponse.json();
-              if (episodesResponse.ok) {
-                allEpisodes = episodesData.episodes || [];
-              } else {
-                episodesDiv.innerHTML = `<p class=\"error\">${episodesData.error}</p>`;
-                episodesDiv.style.display = 'none';
-                return;
-              }
-            }
-            episodesDiv.innerHTML = '<h2>Recent Episodes</h2>';
-            const totalEpisodePages = Math.ceil(allEpisodes.length / episodesPerPage);
-            const startIdx = (page - 1) * episodesPerPage;
-            const pagedEpisodes = allEpisodes.slice(startIdx, startIdx + episodesPerPage);
-            pagedEpisodes.forEach((episode, index) => {
-              const episodeDiv = document.createElement('div');
-              episodeDiv.className = 'episode';
-              episodeDiv.innerHTML = `
-                <h3>${startIdx + index + 1}. ${episode.title}</h3>
-                <p><strong>Published:</strong> ${episode.pubDate}</p>
-                <p><strong>Description:</strong> ${episode.contentSnippet ? episode.contentSnippet.slice(0, 100) + (episode.contentSnippet.length > 100 ? '...' : '') : 'N/A'}</p>
-                <p><strong>Audio:</strong> <a href="${episode.enclosure ? episode.enclosure.url : '#'}" target="_blank">Listen</a></p>
-              `;
-              episodesDiv.appendChild(episodeDiv);
-            });
-            // Paging controls for episodes
-            const episodePagingDiv = document.createElement('div');
-            episodePagingDiv.className = 'paging-controls';
-            if (page > 1) {
-              const prevBtn = document.createElement('button');
-              prevBtn.textContent = 'Previous';
-              prevBtn.onclick = () => { fetchAndRenderEpisodes(page - 1); };
-              episodePagingDiv.appendChild(prevBtn);
-            }
-            episodePagingDiv.appendChild(document.createTextNode(` Page ${page} of ${totalEpisodePages} `));
-            if (page < totalEpisodePages) {
-              const nextBtn = document.createElement('button');
-              nextBtn.textContent = 'Next';
-              nextBtn.onclick = () => { fetchAndRenderEpisodes(page + 1); };
-              episodePagingDiv.appendChild(nextBtn);
-            }
-            episodesDiv.appendChild(episodePagingDiv);
-            episodesDiv.style.display = '';
-          }
-          if (podcast.feedUrl) {
-            fetchAndRenderEpisodes(1);
-          } else {
-            episodesDiv.innerHTML = '<p class="error">No feed URL available to fetch episodes.</p>';
-            episodesDiv.style.display = 'none';
-          }
-        }
-      });
-    } else {
-      podcastInfoDiv.innerHTML = `<p class="error">${searchData.error}</p>`;
-      // Hide episodes div if error
-      episodesDiv.style.display = 'none';
+  // API handlers
+  const handleSearch = async () => {
+    if (!podcastName.trim()) {
+      setError('Please enter a podcast name.');
+      return;
     }
-  } catch (error) {
-    podcastInfoDiv.innerHTML = `<p class="error">Error connecting to the server. Please try again later.</p>`;
-    // Hide episodes div if server error
-    episodesDiv.style.display = 'none';
-    console.error('Error:', error);
-  }
+    
+    setLoading(true);
+    setError('');
+    setSelectedPodcast(null);
+    setPodcasts([]);
+    
+    try {
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ podcastName, limit: 50 })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        if (data.podcasts?.length > 0) {
+          setPodcasts(data.podcasts);
+          setPodcastPage(1);
+        } else {
+          setError('No podcasts found with that name.');
+        }
+      } else {
+        setError(data.error || 'Search failed. Please try again.');
+      }
+    } catch (e) {
+      console.error('Search error:', e);
+      setError('Error connecting to server. Please check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAndSetEpisodes = async (feedUrl) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/episodes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedUrl, limit: 0 })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        setEpisodes(data.episodes || []);
+        setEpisodePage(1);
+      } else {
+        setError(data.error || 'Failed to fetch episodes.');
+      }
+    } catch (e) {
+      console.error('Episodes fetch error:', e);
+      setError('Error connecting to server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectPodcast = (podcast) => {
+    setSelectedPodcast(podcast);
+    setActiveView('details');
+    fetchAndSetEpisodes(podcast.feedUrl);
+  };
+
+  const handleTranscribe = async (e) => {
+    e.preventDefault();
+    const file = audioRef.current?.files[0];
+    if (!file) {
+      setError('Please select an audio file.');
+      return;
+    }
+    
+    setTranscript('');
+    setError('');
+    setLoading(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('audio', file);
+      
+      const res = await fetch('/api/transcribe', { 
+        method: 'POST', 
+        body: formData 
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok && data.transcript) {
+        setTranscript(data.transcript);
+      } else {
+        setError(data.error || 'Transcription failed.');
+      }
+    } catch (e) {
+      console.error('Transcription error:', e);
+      setError('Error connecting to server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRealTimeTranscribe = () => {
+    const file = audioRef.current?.files[0];
+    if (!file) {
+      setError('Please select an audio file.');
+      return;
+    }
+    
+    setRtTranscript('');
+    setError('');
+    
+    const socket = new WebSocket(`ws://${window.location.host}/ws/transcribe`);
+    socket.binaryType = 'arraybuffer';
+    
+    socket.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.transcript) {
+        setRtTranscript(prev => prev + msg.transcript);
+      }
+      if (msg.final) {
+        socket.close();
+      }
+    };
+    
+    socket.onerror = (e) => {
+      console.error('WebSocket error:', e);
+      setError('WebSocket error.');
+    };
+    
+    socket.onopen = async () => {
+      const chunkSize = 128 * 1024;
+      let offset = 0;
+      
+      while (offset < file.size) {
+        const chunk = file.slice(offset, offset + chunkSize);
+        const buf = await chunk.arrayBuffer();
+        socket.send(buf);
+        offset += chunkSize;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      socket.send('end');
+    };
+  };
+
+  const handleNavigation = (viewId) => {
+    setActiveView(viewId);
+    setError('');
+    setMobileMenuOpen(false);
+    
+    if (viewId === 'search') {
+      setSelectedPodcast(null);
+      setPodcasts([]);
+      setPodcastName('');
+      setEpisodes([]);
+    }
+  };
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const getPageTitle = () => {
+    switch (activeView) {
+      case 'search':
+        return selectedPodcast ? `${selectedPodcast.collectionName}` : 'Discover Podcasts';
+      case 'details':
+        return selectedPodcast ? `${selectedPodcast.collectionName} - Episodes` : 'Podcast Details';
+      case 'transcribe':
+        return 'Audio Transcription';
+      default:
+        return 'Podcast Hub';
+    }
+  };
+
+  const renderMainContent = () => {
+    switch (activeView) {
+      case 'search':
+        return (
+          <div className="content-grid fade-in">
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Search Podcasts</h2>
+                <div className="card-badge">Discover</div>
+              </div>
+              <PodcastSearch 
+                podcastName={podcastName}
+                setPodcastName={setPodcastName}
+                onSearch={handleSearch}
+                loading={loading}
+                error={error}
+              />
+            </div>
+            
+            {podcasts.length > 0 && (
+              <div className="card">
+                <div className="card-header">
+                  <h2 className="card-title">Search Results</h2>
+                  <div className="card-badge">{podcasts.length} found</div>
+                </div>
+                <PodcastList 
+                  podcasts={podcasts}
+                  currentPage={podcastPage}
+                  pageSize={PODCAST_PAGE_SIZE}
+                  onPageChange={setPodcastPage}
+                  onSelectPodcast={handleSelectPodcast}
+                  loading={loading}
+                />
+              </div>
+            )}
+          </div>
+        );
+        
+      case 'details':
+        return selectedPodcast ? (
+          <div className="content-grid fade-in">
+            <PodcastDetails 
+              podcast={selectedPodcast}
+              episodes={episodes}
+              currentPage={episodePage}
+              pageSize={EPISODES_PER_PAGE}
+              onPageChange={setEpisodePage}
+              onBack={() => handleNavigation('search')}
+            />
+          </div>
+        ) : (
+          <div className="card fade-in">
+            <div className="loading">
+              <div className="spinner"></div>
+              Loading podcast details...
+            </div>
+          </div>
+        );
+        
+      case 'transcribe':
+        return (
+          <div className="content-grid fade-in">
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Audio Transcription</h2>
+                <div className="card-badge">AI Powered</div>
+              </div>
+              <AudioTranscription 
+                onTranscribe={handleTranscribe}
+                onRealTimeTranscribe={handleRealTimeTranscribe}
+                transcript={transcript}
+                rtTranscript={rtTranscript}
+                error={error}
+                audioRef={audioRef}
+                loading={loading}
+              />
+            </div>
+          </div>
+        );
+        
+      default:
+        return (
+          <div className="card fade-in">
+            <div className="card-header">
+              <h2 className="card-title">Welcome to Podcast Hub</h2>
+            </div>
+            <p>Select an option from the sidebar to get started.</p>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="app-layout">
+      {/* Sidebar Navigation */}
+      <nav className={`sidebar ${mobileMenuOpen ? 'mobile-visible' : 'mobile-hidden'}`}>
+        <div className="sidebar-header">
+          <h1>PodcastHub</h1>
+          <p>Discover, Listen, Transcribe</p>
+        </div>
+        
+        <div className="nav-section">
+          <h3>Main</h3>
+          {navItems.map((item) => (
+            <div 
+              key={item.id}
+              className={`nav-item ${item.active ? 'active' : ''}`}
+              onClick={() => handleNavigation(item.id)}
+            >
+              <span className="nav-item-icon">{item.icon}</span>
+              {item.label}
+            </div>
+          ))}
+        </div>
+        
+        {selectedPodcast && (
+          <div className="nav-section">
+            <h3>Current Podcast</h3>
+            <div className="nav-item" style={{ cursor: 'default', opacity: 0.8 }}>
+              <span className="nav-item-icon">🎧</span>
+              <div style={{ fontSize: '0.85rem', lineHeight: '1.3' }}>
+                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                  {selectedPodcast.collectionName}
+                </div>
+                <div style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>
+                  by {selectedPodcast.artistName}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div className="nav-section" style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+          <h3>About</h3>
+          <div className="nav-item" style={{ cursor: 'default', opacity: 0.6, fontSize: '0.85rem' }}>
+            <span className="nav-item-icon">ℹ️</span>
+            Modern podcast discovery and transcription platform
+          </div>
+        </div>
+      </nav>
+      
+      {/* Main Content Area */}
+      <main className="main-content">
+        {/* Header */}
+        <header className="main-header">
+          <div className="header-content">
+            <div className="header-left">
+              <button className="mobile-menu-btn" onClick={toggleMobileMenu}>
+                ☰
+              </button>
+              <h1 className="page-title">{getPageTitle()}</h1>
+            </div>
+            
+            <div className="header-right">
+              {loading && (
+                <div className="loading-indicator">
+                  <div className="spinner"></div>
+                  <span>Loading...</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+        
+        {/* Error Display */}
+        {error && (
+          <div className="error fade-in">
+            <span className="error-icon">⚠️</span>
+            {error}
+            <button 
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
+              onClick={() => setError('')}
+            >
+              ×
+            </button>
+          </div>
+        )}
+        
+        {/* Main Content */}
+        {renderMainContent()}
+      </main>
+      
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 50,
+            display: window.innerWidth <= 768 ? 'block' : 'none'
+          }}
+          onClick={() => setMobileMenuOpen(false)}
+        ></div>
+      )}
+    </div>
+  );
 }
 
-// Add event listener for Enter key on the input field
-document.getElementById('podcastSearch').addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') {
-    searchPodcast();
-  }
-});
+ReactDOM.render(<App />, document.getElementById('root'));
