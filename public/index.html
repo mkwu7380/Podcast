@@ -3,19 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Podcast Scraper</title>
+  <title>PodcastHub</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="description" content="Discover, Listen, and Transcribe Podcasts">
+  <meta name="theme-color" content="#3a7bd5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PodcastHub">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- PWA Icons -->
+  <link rel="icon" href="/icons/create-icons.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/create-icons.svg">
+  <link rel="mask-icon" href="/icons/create-icons.svg" color="#3a7bd5">
+  
+  <!-- App Stylesheets -->  
   <link rel="stylesheet" href="styles.css">
+  
+  <!-- React and Babel Scripts -->  
+  <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>Podcast Scraper</h1>
-    <div class="search-container">
-      <input type="text" id="podcastSearch" placeholder="Enter podcast name...">
-      <button onclick="searchPodcast()">Search</button>
-    </div>
-    <div id="podcastInfo" class="podcast-info"></div>
-    <div id="episodes" class="episodes" style="display:none;"></div>
-  </div>
-  <script src="app.js"></script>
+  <div id="root"></div>
+  
+  <!-- Load modular React components -->
+  <script type="text/babel" data-presets="env,react" src="components/PodcastSearch.js"></script>
+  <script type="text/babel" data-presets="env,react" src="components/PodcastList.js"></script>
+  <script type="text/babel" data-presets="env,react" src="components/PodcastDetails.js"></script>
+  <script type="text/babel" data-presets="env,react" src="components/AudioTranscription.js"></script>
+  <script type="text/babel" data-presets="env,react" src="components/EpisodeSummary.js"></script>
+  
+  <!-- Load main App component -->
+  <script type="text/babel" data-presets="env,react" data-plugins="transform-async-to-generator" src="app.js"></script>
+  
+  <!-- PWA Service Worker Registration -->
+  <script src="registerSW.js"></script>
+  
+  <!-- PWA Notification Support -->
+  <script src="notification-helper.js"></script>
 </body>
 </html>

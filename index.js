@@ -1,45 +1,64 @@
 const express = require('express');
-const apiRoutes = require('./routes/api');
+const { Server: WebSocketServer } = require('ws');
+const path = require('path');
+
+// Import configuration and routes
 const config = require('./config');
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
+const apiRoutes = require('./routes/api');
+const transcriptionHandler = require('./src/websocket/transcriptionHandler');
+const { setupSwagger } = require('./src/utils/swaggerConfig');
 
 const app = express();
-const port = 3000;
 
-// Middleware to parse JSON bodies
+// Middleware setup
 app.use(express.json());
-
-// Serve static files from the 'public' folder
 app.use(express.static('public'));
 
-// --- Swagger UI Setup ---
-const swaggerDefinition = {
-  openapi: '3.0.0',
-  info: {
-    title: 'Podcast REST API',
-    version: '1.0.0',
-    description: 'API for searching podcasts, fetching episodes, and transcribing audio.',
-  },
-  servers: [
-    {
-      url: 'http://localhost:3000',
-    },
-  ],
-};
-
-const options = {
-  swaggerDefinition,
-  apis: ['./routes/api.js'], // Path to the API docs (JSDoc comments)
-};
-const swaggerSpec = swaggerJsdoc(options);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-// --- End Swagger UI Setup ---
+// Setup Swagger documentation
+setupSwagger(app);
 
 // Use API routes
 app.use(config.apiBaseUrl, apiRoutes);
 
-// Start the server
-app.listen(config.port, () => {
-  console.log(`Podcast Scraper API server running at http://localhost:${config.port}`);
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    service: 'Podcast API'
+  });
+});
+
+// Start HTTP server
+const server = app.listen(config.port, () => {
+  console.log(`🚀 Podcast API server running at http://localhost:${config.port}`);
+  console.log(`📚 API Documentation available at http://localhost:${config.port}/api-docs`);
+  console.log(`🔊 WebSocket endpoint: ws://localhost:${config.port}/ws/transcribe`);
+});
+
+// Setup WebSocket server for real-time transcription
+const wss = new WebSocketServer({ 
+  server, 
+  path: '/ws/transcribe' 
+});
+
+wss.on('connection', (ws) => {
+  transcriptionHandler.handleConnection(ws);
+});
+
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  console.log('🛑 Received SIGTERM, shutting down gracefully...');
+  server.close(() => {
+    console.log('✅ Server closed successfully');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('🛑 Received SIGINT, shutting down gracefully...');
+  server.close(() => {
+    console.log('✅ Server closed successfully');
+    process.exit(0);
+  });
 });
