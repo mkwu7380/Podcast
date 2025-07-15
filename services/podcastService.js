@@ -40,40 +40,7 @@ async function fetchEpisodes(feedUrl, limit = 0) {
   }
 }
 
-/**
- * Display podcast information in a formatted way
- * @param {Object} podcast - Podcast data object
- */
-function displayPodcastInfo(podcast) {
-  console.log('Podcast Found:');
-  console.log('Name:', podcast.trackName);
-  console.log('Artist:', podcast.artistName);
-  console.log('Genre:', podcast.primaryGenreName);
-  console.log('Total Episodes:', podcast.trackCount);
-  console.log('Feed URL:', podcast.feedUrl);
-  console.log('Artwork URL:', podcast.artworkUrl600);
-  console.log('Apple Podcasts URL:', podcast.trackViewUrl);
-}
-
-/**
- * Display episodes in a formatted way
- * @param {Array} episodes - Array of episode data
- */
-function displayEpisodes(episodes) {
-  console.log('\nRecent Episodes:');
-  episodes.forEach((episode, index) => {
-    console.log(`${index + 1}. ${episode.title}`);
-    console.log('   Published:', episode.pubDate);
-    console.log('   Link:', episode.link);
-    console.log('   Audio URL:', episode.enclosure ? episode.enclosure.url : 'N/A');
-    console.log('   Description:', episode.contentSnippet ? episode.contentSnippet.slice(0, 100) + (episode.contentSnippet.length > 100 ? '...' : '') : 'N/A');
-    console.log('');
-  });
-}
-
 module.exports = {
   searchPodcast,
-  fetchEpisodes,
-  displayPodcastInfo,
-  displayEpisodes
+  fetchEpisodes
 };

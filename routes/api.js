@@ -1,45 +1,250 @@
 const express = require('express');
 const router = express.Router();
-const { searchPodcast, fetchEpisodes } = require('../services/podcastService');
+const podcastController = require('../src/controllers/podcastController');
+const transcriptionController = require('../src/controllers/transcriptionController');
+const summaryController = require('../src/controllers/summaryController');
+const upload = require('../src/middleware/uploadMiddleware');
 
 /**
- * API endpoint to search for a podcast
+ * @swagger
+ * /api/search:
+ *   post:
+ *     summary: Search for podcasts
+ *     tags: [Podcasts]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               podcastName:
+ *                 type: string
+ *                 description: Name of the podcast to search for
+ *               limit:
+ *                 type: number
+ *                 description: Maximum number of results
+ *     responses:
+ *       200:
+ *         description: Successful search
+ *       400:
+ *         description: Invalid request
+ *       404:
+ *         description: No podcasts found
  */
-router.post('/search', async (req, res) => {
-  try {
-    const { podcastName, limit } = req.body;
-    if (!podcastName) {
-      return res.status(400).json({ error: 'Podcast name is required' });
-    }
+router.post('/search', podcastController.searchPodcasts);
 
-    const podcasts = await searchPodcast(podcastName, limit || 10);
-    if (podcasts && podcasts.length > 0) {
-      return res.json({ podcasts });
-    } else {
-      return res.status(404).json({ error: `No podcasts found with the name '${podcastName}' on Apple Podcasts` });
-    }
-  } catch (error) {
-    console.error('Error fetching data from Apple Podcasts API:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
+/**
+ * @swagger
+ * /api/episodes:
+ *   post:
+ *     summary: Fetch episodes for a podcast
+ *     tags: [Podcasts]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               feedUrl:
+ *                 type: string
+ *                 description: RSS feed URL of the podcast
+ *               limit:
+ *                 type: number
+ *                 description: Number of episodes to fetch
+ *     responses:
+ *       200:
+ *         description: Episodes retrieved successfully
+ *       400:
+ *         description: Invalid request
+ */
+router.post('/episodes', podcastController.getEpisodes);
+
+/**
+ * @swagger
+ * /api/transcribe:
+ *   post:
+ *     summary: Transcribe an audio file
+ *     tags: [Transcription]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               audio:
+ *                 type: string
+ *                 format: binary
+ *                 description: Audio file to transcribe
+ *     responses:
+ *       200:
+ *         description: Transcription successful
+ *       400:
+ *         description: Invalid request or no audio file
+ *       500:
+ *         description: Transcription failed
+ */
+router.post('/transcribe', upload.single('audio'), transcriptionController.transcribeAudio);
+
+// Health check endpoint
+router.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 /**
- * API endpoint to fetch episodes for a podcast
+ * @swagger
+ * /api/summary/audio:
+ *   post:
+ *     summary: Summarize uploaded audio file
+ *     tags: [Summary]
+ *     consumes:
+ *       - multipart/form-data
+ *     parameters:
+ *       - in: formData
+ *         name: audio
+ *         type: file
+ *         required: true
+ *         description: Audio file to transcribe and summarize
+ *       - in: formData
+ *         name: type
+ *         type: string
+ *         enum: [brief, comprehensive, detailed, bullet-points]
+ *         description: Type of summary to generate
+ *       - in: formData
+ *         name: episodeSummary
+ *         type: boolean
+ *         description: Generate structured episode summary
+ *       - in: formData
+ *         name: title
+ *         type: string
+ *         description: Episode title
+ *       - in: formData
+ *         name: pubDate
+ *         type: string
+ *         description: Episode publication date
+ *     responses:
+ *       200:
+ *         description: Audio summarized successfully
+ *       400:
+ *         description: Invalid input
+ *       500:
+ *         description: Server error
  */
-router.post('/episodes', async (req, res) => {
-  try {
-    const { feedUrl, limit } = req.body;
-    if (!feedUrl) {
-      return res.status(400).json({ error: 'Feed URL is required' });
-    }
+router.post('/summary/audio', upload.single('audio'), summaryController.summarizeAudio);
 
-    const episodes = await fetchEpisodes(feedUrl, limit || 0);
-    return res.json({ episodes });
-  } catch (error) {
-    console.error('Error fetching episodes:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-});
+/**
+ * @swagger
+ * /api/summary/transcript:
+ *   post:
+ *     summary: Summarize provided transcript text
+ *     tags: [Summary]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - transcript
+ *             properties:
+ *               transcript:
+ *                 type: string
+ *                 description: Text transcript to summarize
+ *               type:
+ *                 type: string
+ *                 enum: [brief, comprehensive, detailed, bullet-points]
+ *                 description: Type of summary to generate
+ *               episodeInfo:
+ *                 type: object
+ *                 properties:
+ *                   title:
+ *                     type: string
+ *                   pubDate:
+ *                     type: string
+ *                   duration:
+ *                     type: string
+ *     responses:
+ *       200:
+ *         description: Transcript summarized successfully
+ *       400:
+ *         description: Invalid input
+ *       500:
+ *         description: Server error
+ */
+router.post('/summary/transcript', summaryController.summarizeTranscript);
+
+/**
+ * @swagger
+ * /api/summary/episode-url:
+ *   post:
+ *     summary: Summarize podcast episode from audio URL
+ *     tags: [Summary]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - audioUrl
+ *             properties:
+ *               audioUrl:
+ *                 type: string
+ *                 description: URL of the audio file to download and summarize
+ *               summaryType:
+ *                 type: string
+ *                 enum: [brief, comprehensive, detailed, bullet-points]
+ *               episodeInfo:
+ *                 type: object
+ *                 properties:
+ *                   title:
+ *                     type: string
+ *                   pubDate:
+ *                     type: string
+ *                   duration:
+ *                     type: string
+ *     responses:
+ *       200:
+ *         description: Episode summarized successfully
+ *       400:
+ *         description: Invalid input
+ *       500:
+ *         description: Server error
+ */
+router.post('/summary/episode-url', summaryController.summarizeEpisodeFromUrl);
+
+/**
+ * @swagger
+ * /api/summary/status:
+ *   get:
+ *     summary: Get AI summarization service status
+ *     tags: [Summary]
+ *     responses:
+ *       200:
+ *         description: Service status retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     aiConfigured:
+ *                       type: boolean
+ *                     availableTypes:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     features:
+ *                       type: object
+ *                     fallbackMode:
+ *                       type: boolean
+ */
+router.get('/summary/status', summaryController.getServiceStatus);
 
 module.exports = router;
