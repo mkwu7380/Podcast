@@ -1,8 +1,13 @@
 /**
  * Main Dashboard Layout Component
  * Provides consistent layout structure with responsive sidebar and main content area
+ * Features:
+ * - Mobile-first responsive design
+ * - Touch-friendly navigation
+ * - Smooth transitions and animations
+ * - Accessible navigation
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function DashboardLayout({ 
   children, 
@@ -11,10 +16,40 @@ function DashboardLayout({
   toggleDarkMode, 
   isDarkMode 
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Check if the device is mobile
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+      // Auto-close sidebar on mobile when resizing to mobile
+      if (window.innerWidth <= 768) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    
+    // Initial check
+    checkIfMobile();
+    
+    // Add event listener for window resize
+    window.addEventListener('resize', checkIfMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
   
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+    setSidebarOpen(prev => !prev);
+  };
+  
+  // Close sidebar when clicking outside on mobile
+  const handleOverlayClick = (e) => {
+    if (isMobile && sidebarOpen) {
+      setSidebarOpen(false);
+    }
   };
   
   const navItems = [
@@ -22,19 +57,49 @@ function DashboardLayout({
     { id: 'transcription', label: 'Audio Transcription', icon: '🎙️' }
   ];
   
+  // Close sidebar when a nav item is clicked on mobile
+  const handleNavClick = (view) => {
+    onNavigate(view);
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
+
   return (
-    <div className={`app-layout ${sidebarOpen ? '' : 'sidebar-collapsed'}`}>
+    <div 
+      className={`app-layout ${sidebarOpen ? 'sidebar-visible' : ''} ${isMobile ? 'mobile' : ''}`}
+      onClick={handleOverlayClick}
+    >
       {/* Mobile Sidebar Toggle */}
       <button 
-        className="sidebar-toggle"
-        onClick={toggleSidebar}
-        aria-label={sidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
+        className={`sidebar-toggle ${sidebarOpen ? 'active' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleSidebar();
+        }}
+        aria-expanded={sidebarOpen}
+        aria-controls="primary-navigation"
+        aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
       >
-        {sidebarOpen ? '✕' : '☰'}
+        <span className="hamburger">
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+        </span>
+        <span className="sr-only">Menu</span>
       </button>
       
+      {/* Overlay for mobile */}
+      {isMobile && sidebarOpen && (
+        <div className="sidebar-overlay" onClick={toggleSidebar} />
+      )}
+      
       {/* Sidebar Navigation */}
-      <nav className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
+      <nav 
+        id="primary-navigation"
+        className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sidebar-header">
           <h2 className="app-title">
             <span className="logo-icon">🎧</span>
@@ -48,13 +113,7 @@ function DashboardLayout({
               <li key={item.id} className={activeView === item.id ? 'active' : ''}>
                 <button 
                   className="nav-link"
-                  onClick={() => {
-                    onNavigate(item.id);
-                    // On mobile, close sidebar after navigation
-                    if (window.innerWidth <= 768) {
-                      setSidebarOpen(false);
-                    }
-                  }}
+                  onClick={() => handleNavClick(item.id)}
                 >
                   <span className="nav-icon">{item.icon}</span>
                   <span className="nav-label">{item.label}</span>

@@ -91,10 +91,46 @@ a:hover {
   grid-template-rows: 1fr;
   min-height: 100vh;
   transition: all var(--transition-speed) ease;
+  position: relative;
+  overflow-x: hidden;
 }
 
-.app-layout.sidebar-collapsed {
-  grid-template-columns: var(--sidebar-collapsed-width) 1fr;
+/* Desktop styles */
+@media (min-width: 769px) {
+  .app-layout {
+    padding-left: var(--sidebar-width);
+  }
+  
+  .sidebar {
+    transform: translateX(0);
+  }
+  
+  .sidebar-toggle {
+    display: none; /* Hide toggle on desktop */
+  }
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .app-layout {
+    padding-left: 0;
+  }
+  
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar-visible .sidebar {
+    transform: translateX(0);
+  }
+  
+  /* Prevent body scroll when sidebar is open */
+  body.sidebar-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
 }
 
 /* Sidebar */
@@ -109,12 +145,52 @@ a:hover {
   width: var(--sidebar-width);
   left: 0;
   top: 0;
-  z-index: 100;
-  transition: all var(--transition-speed) ease;
+  z-index: 1000;
+  transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+  will-change: transform;
+  transform: translateX(-100%);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.sidebar.closed {
-  transform: translateX(-100%);
+/* Sidebar states */
+.sidebar.open {
+  transform: translateX(0);
+  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Sidebar overlay for mobile */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-visible .sidebar-overlay {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 280px;
+  }
+  
+  .sidebar:not(.open) {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
 }
 
 .sidebar-header {
@@ -222,12 +298,53 @@ a:hover {
 .main-content {
   grid-column: 2;
   padding: 2rem;
-  margin-left: var(--sidebar-width);
+  width: 100%;
+  max-width: 100%;
   transition: all var(--transition-speed) ease;
+  position: relative;
+  z-index: 1;
 }
 
-.sidebar-collapsed .main-content {
-  margin-left: var(--sidebar-collapsed-width);
+/* Adjust main content when sidebar is open on mobile */
+@media (max-width: 768px) {
+  .main-content {
+    grid-column: 1;
+    margin-left: 0;
+    padding: 1.5rem;
+    padding-top: 5.5rem; /* Space for header and toggle */
+  }
+  
+  /* Add a subtle shadow to content when sidebar is open */
+  .sidebar-visible .main-content::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .sidebar-visible .main-content::before {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 769px) {
+  .main-content {
+    margin-left: 0;
+    padding-left: calc(var(--sidebar-width) + 2rem);
+  }
+  
+  .sidebar-collapsed .main-content {
+    padding-left: calc(var(--sidebar-collapsed-width) + 2rem);
+  }
 }
 
 .main-header {
@@ -248,52 +365,129 @@ a:hover {
   position: fixed;
   top: 1.25rem;
   left: 1rem;
-  z-index: 200;
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
+  z-index: 2000;
+  width: 3rem;
+  height: 3rem;
+  padding: 0.5rem;
+  display: none; /* Hidden by default */
   align-items: center;
   justify-content: center;
   background: var(--primary-color);
-  color: white;
   border: none;
   border-radius: 50%;
-  font-size: 1.25rem;
   cursor: pointer;
   box-shadow: 0 2px 10px var(--shadow-color);
-  display: none; /* Hidden by default, shown on mobile */
+  transition: all 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hamburger menu */
+.hamburger {
+  position: relative;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hamburger-line {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: white;
+  border-radius: 1px;
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+/* Active state for hamburger */
+.sidebar-toggle.active .hamburger-line:nth-child(1) {
+  transform: translateY(0.65rem) rotate(45deg);
+}
+
+.sidebar-toggle.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.sidebar-toggle.active .hamburger-line:nth-child(3) {
+  transform: translateY(-0.65rem) rotate(-45deg);
+}
+
+/* Show toggle on mobile */
+@media (max-width: 768px) {
+  .sidebar-toggle {
+    display: flex;
+  }
+  
+  /* Hide toggle when sidebar is open on mobile */
+  .sidebar-visible .sidebar-toggle {
+    left: calc(280px + 1rem);
+    background: var(--bg-secondary);
+  }
+  
+  .sidebar-visible .hamburger-line {
+    background: var(--text-primary);
+  }
 }
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   :root {
-    --sidebar-width: 240px;
+    --sidebar-width: 280px;
   }
   
   .app-layout {
     grid-template-columns: 1fr;
   }
   
-  .sidebar-toggle {
-    display: flex;
-  }
-  
-  .sidebar {
-    transform: translateX(-100%);
-  }
-  
-  .sidebar.open {
-    transform: translateX(0);
-  }
-  
   .main-content {
     grid-column: 1;
     margin-left: 0;
     padding: 1.5rem;
+    padding-top: 5rem; /* Add space for the header and toggle button */
   }
   
-  .sidebar-collapsed .main-content {
-    margin-left: 0;
+  /* Improve touch targets for mobile */
+  .nav-link {
+    padding: 1rem 1.5rem;
+  }
+  
+  /* Make buttons more touch-friendly */
+  .btn {
+    padding: 0.875rem 1.5rem;
+    min-height: 3rem;
+  }
+  
+  /* Improve form elements for touch */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea,
+  select {
+    min-height: 3rem;
+    font-size: 1rem; /* Prevent zoom on focus in iOS */
+  }
+  
+  /* Prevent textarea from being too small on mobile */
+  textarea {
+    min-height: 8rem;
+  }
+  
+  /* Improve spacing for mobile */
+  .content-wrapper {
+    padding: 0.5rem;
+  }
+  
+  /* Hide scrollbar for the sidebar on mobile */
+  .sidebar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .sidebar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
