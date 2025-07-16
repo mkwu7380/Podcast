@@ -1,4 +1,4 @@
-const { useState, useRef } = React;
+const { useState, useRef, useEffect } = React;
 
 /**
  * Main App Component - Modern Dashboard Layout with Sidebar Navigation
@@ -6,6 +6,30 @@ const { useState, useRef } = React;
  */
 function App() {
   // State management
+  const [darkMode, setDarkMode] = useState(false);
+  
+  // Initialize dark mode based on system preference
+  useEffect(() => {
+    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setDarkMode(isDarkMode);
+    // Apply the theme immediately
+    const root = document.documentElement;
+    if (isDarkMode) {
+      // Dark theme colors
+      root.style.setProperty('--bg-primary', 'rgba(26, 32, 44, 0.95)');
+      root.style.setProperty('--bg-secondary', 'rgba(17, 24, 39, 0.9)');
+      root.style.setProperty('--text-primary', '#f7fafc');
+      root.style.setProperty('--text-secondary', '#e2e8f0');
+      root.style.setProperty('--text-tertiary', '#a0aec0');
+      root.style.setProperty('--border-color', 'rgba(255, 255, 255, 0.1)');
+      root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.3)');
+      // Dark mode gradient
+      root.style.setProperty('--gradient-bg', 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)');
+    } else {
+      // Set light mode gradient by default
+      root.style.setProperty('--gradient-bg', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)');
+    }
+  }, []);
   const [activeView, setActiveView] = useState('search');
   const [podcastName, setPodcastName] = useState('');
   const [podcasts, setPodcasts] = useState([]);
@@ -194,6 +218,37 @@ function App() {
     }
   };
 
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    
+    // Update CSS variables based on dark mode
+    const root = document.documentElement;
+    if (newDarkMode) {
+      // Dark theme colors
+      root.style.setProperty('--bg-primary', 'rgba(26, 32, 44, 0.95)');
+      root.style.setProperty('--bg-secondary', 'rgba(17, 24, 39, 0.9)');
+      root.style.setProperty('--text-primary', '#f7fafc');
+      root.style.setProperty('--text-secondary', '#e2e8f0');
+      root.style.setProperty('--text-tertiary', '#a0aec0');
+      root.style.setProperty('--border-color', 'rgba(255, 255, 255, 0.1)');
+      root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.3)');
+      // Dark mode gradient
+      root.style.setProperty('--gradient-bg', 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)');
+    } else {
+      // Light theme colors
+      root.style.setProperty('--bg-primary', 'rgba(255, 255, 255, 0.95)');
+      root.style.setProperty('--bg-secondary', 'rgba(248, 249, 250, 0.8)');
+      root.style.setProperty('--text-primary', '#2d3748');
+      root.style.setProperty('--text-secondary', '#4a5568');
+      root.style.setProperty('--text-tertiary', '#718096');
+      root.style.setProperty('--border-color', '#e2e8f0');
+      root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.1)');
+      // Light mode gradient
+      root.style.setProperty('--gradient-bg', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)');
+    }
+  };
+
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
@@ -343,7 +398,34 @@ function App() {
           </div>
         )}
         
-        <div className="nav-section" style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+        {/* Dark Mode Toggle */}
+        <div className="nav-section" style={{ marginTop: 'auto', padding: '1.5rem 0' }}>
+          <div 
+            className="nav-item" 
+            onClick={toggleDarkMode}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              borderRadius: '8px',
+              padding: '0.5rem 1rem',
+              margin: '0.5rem 0',
+              transition: 'all 0.2s ease',
+              backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span className="nav-item-icon">{darkMode ? '🌙' : '☀️'}</span>
+              <span>{darkMode ? 'Dark Mode' : 'Light Mode'}</span>
+            </div>
+            <div className="toggle-switch">
+              <div className={`toggle-slider ${darkMode ? 'dark' : ''}`}></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="nav-section" style={{ paddingBottom: '1rem' }}>
           <h3>About</h3>
           <div className="nav-item" style={{ cursor: 'default', opacity: 0.6, fontSize: '0.85rem' }}>
             <span className="nav-item-icon">ℹ️</span>
