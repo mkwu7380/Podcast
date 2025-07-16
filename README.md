@@ -2,7 +2,7 @@
 
 A modern, responsive podcast application built with React, featuring a beautiful dashboard interface, PWA support, and offline capabilities.
 
-![Podcast App Screenshot](public/images/screenshot.png)
+![Podcast App Screenshot](public/assets/images/screenshot.png)
 
 ## ✨ Features
 
