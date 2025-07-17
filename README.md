@@ -169,6 +169,44 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+```text
+MIT License
+
+Copyright (c) 2025 Podcast App Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## 📝 Third-Party Licenses
+
+This application includes open source software components that are licensed under their own respective licenses. See the `node_modules` directory for more information about third-party licenses.
+
+## 📜 Compliance Guidelines
+
+To comply with the MIT License, please ensure that:
+
+1. The original copyright notice is included in all copies or substantial portions of the software.
+2. The full license text is included in all distributions of the software.
+3. Any substantial changes to the code are documented.
+
+For more information, please see the [full license text](LICENSE).
+
 ## 🙏 Acknowledgments
 
 - Built with [React](https://reactjs.org/)

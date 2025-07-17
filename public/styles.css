@@ -150,7 +150,7 @@ body::before {
   background: var(--bg-primary);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--border-color);
-  padding: 2rem 1.5rem;
+  padding: 0;
   position: fixed;
   left: 0;
   top: 0;
@@ -160,6 +160,8 @@ body::before {
   transition: transform 0.3s ease;
   transform: translateX(0);
   box-shadow: 2px 0 20px var(--shadow-color);
+  display: flex;
+  flex-direction: column;
 }
 
 /* Mobile first - hide by default */
@@ -297,6 +299,18 @@ body::before {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .content-grid {
+    padding: 0.75rem;
+    gap: 1.5rem;
+  }
+  
+  .component-container,
+  .component-container.full-width,
+  .component-container.centered {
+    margin: 0.75rem;
+    width: calc(100% - 1.5rem);
+  }
+  
   .card {
     padding: 1.75rem 1.5rem;
     margin: 0 -1rem;
@@ -449,6 +463,10 @@ body::before {
   display: grid;
   gap: 2rem;
   grid-template-columns: 1fr;
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .content-grid.two-column {
@@ -457,6 +475,25 @@ body::before {
 
 .content-grid.three-column {
   grid-template-columns: repeat(3, 1fr);
+}
+
+/* Standardized Component Margins */
+.component-container {
+  margin: 1rem;
+  max-width: 1200px;
+  width: calc(100% - 2rem);
+}
+
+.component-container.full-width {
+  margin: 1rem auto;
+  max-width: 1200px;
+  width: calc(100% - 2rem);
+}
+
+.component-container.centered {
+  margin: 1rem auto;
+  max-width: 1200px;
+  width: calc(100% - 2rem);
 }
 
 /* Card Components */

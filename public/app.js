@@ -48,7 +48,19 @@ function App() {
   const PODCAST_PAGE_SIZE = 8;
   const EPISODES_PER_PAGE = 10;
 
-  // Navigation items
+  // Define License component with fallback
+  const LicenseComponent = window.License || (() => (
+    <div className="card">
+      <div className="card-header">
+        <h2 className="card-title">License</h2>
+      </div>
+      <div className="card-content">
+        <p>License information could not be loaded. Please try again later.</p>
+      </div>
+    </div>
+  ));
+
+  // Main navigation items (excluding license - moved to footer)
   const navItems = [
     { id: 'search', label: 'Search Podcasts', icon: '🔍', active: activeView === 'search' },
     { id: 'transcribe', label: 'Audio Transcription', icon: '🎤', active: activeView === 'transcribe' },
@@ -261,6 +273,8 @@ function App() {
         return selectedPodcast ? `${selectedPodcast.collectionName} - Episodes` : 'Podcast Details';
       case 'transcribe':
         return 'Audio Transcription';
+      case 'license':
+        return 'License';
       default:
         return 'Podcast Hub';
     }
@@ -346,6 +360,13 @@ function App() {
           </div>
         );
         
+      case 'license':
+        return (
+          <div className="content-grid fade-in">
+            <LicenseComponent />
+          </div>
+        );
+        
       default:
         return (
           <div className="card fade-in">
@@ -362,74 +383,150 @@ function App() {
     <div className="app-layout">
       {/* Sidebar Navigation */}
       <nav className={`sidebar ${mobileMenuOpen ? 'mobile-visible' : 'mobile-hidden'}`}>
-        <div className="sidebar-header">
-          <h1>PodcastHub</h1>
-          <p>Discover, Listen, Transcribe</p>
-        </div>
-        
-        <div className="nav-section">
-          <h3>Main</h3>
-          {navItems.map((item) => (
-            <div 
-              key={item.id}
-              className={`nav-item ${item.active ? 'active' : ''}`}
-              onClick={() => handleNavigation(item.id)}
-            >
-              <span className="nav-item-icon">{item.icon}</span>
-              {item.label}
-            </div>
-          ))}
-        </div>
-        
-        {selectedPodcast && (
-          <div className="nav-section">
-            <h3>Current Podcast</h3>
-            <div className="nav-item" style={{ cursor: 'default', opacity: 0.8 }}>
-              <span className="nav-item-icon">🎧</span>
-              <div style={{ fontSize: '0.85rem', lineHeight: '1.3' }}>
-                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
-                  {selectedPodcast.collectionName}
+        {/* Sidebar Content with Padding */}
+        <div style={{ padding: '1.5rem', paddingBottom: '0', flex: '1', display: 'flex', flexDirection: 'column' }}>
+          <div className="sidebar-header">
+            {/* Clean Logo Section with Theme Toggle in Top Right */}
+            <div style={{ 
+              padding: '0 0 1rem 0',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              position: 'relative'
+            }}>
+              {/* Theme Toggle - Top Right Corner */}
+              <div 
+                onClick={toggleDarkMode}
+                style={{ 
+                  position: 'absolute',
+                  top: '0',
+                  right: '0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  padding: '0.4rem',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
+                  backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                  fontSize: '1rem',
+                  width: '2rem',
+                  height: '2rem'
+                }}
+              >
+                {darkMode ? '🌙' : '☀️'}
+              </div>
+              
+              {/* Centered Logo and Text */}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  fontSize: '2rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  🎧
                 </div>
-                <div style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>
-                  by {selectedPodcast.artistName}
-                </div>
+                <h1 style={{ 
+                  fontSize: '1.5rem',
+                  fontWeight: '700',
+                  margin: '0 0 0.3rem 0',
+                  color: 'var(--text-primary)'
+                }}>
+                  PodcastHub
+                </h1>
+                <p style={{ 
+                  fontSize: '0.85rem',
+                  margin: '0',
+                  opacity: '0.8',
+                  color: 'var(--text-secondary)'
+                }}>
+                  Discover & Transcribe
+                </p>
               </div>
             </div>
           </div>
-        )}
-        
-        {/* Dark Mode Toggle */}
-        <div className="nav-section" style={{ marginTop: 'auto', padding: '1.5rem 0' }}>
-          <div 
-            className="nav-item" 
-            onClick={toggleDarkMode}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              borderRadius: '8px',
-              padding: '0.5rem 1rem',
-              margin: '0.5rem 0',
-              transition: 'all 0.2s ease',
-              backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span className="nav-item-icon">{darkMode ? '🌙' : '☀️'}</span>
-              <span>{darkMode ? 'Dark Mode' : 'Light Mode'}</span>
-            </div>
-            <div className="toggle-switch">
-              <div className={`toggle-slider ${darkMode ? 'dark' : ''}`}></div>
-            </div>
+          
+          <div className="nav-section">
+            <h3>Main</h3>
+            {navItems.map((item) => (
+              <div 
+                key={item.id}
+                className={`nav-item ${item.active ? 'active' : ''}`}
+                onClick={() => handleNavigation(item.id)}
+              >
+                <span className="nav-item-icon">{item.icon}</span>
+                {item.label}
+              </div>
+            ))}
           </div>
-        </div>
-
-        <div className="nav-section" style={{ paddingBottom: '1rem' }}>
-          <h3>About</h3>
-          <div className="nav-item" style={{ cursor: 'default', opacity: 0.6, fontSize: '0.85rem' }}>
-            <span className="nav-item-icon">ℹ️</span>
-            Modern podcast discovery and transcription platform
+          
+          {selectedPodcast && (
+            <div className="nav-section">
+              <h3>Current Podcast</h3>
+              <div className="nav-item" style={{ cursor: 'default', opacity: 0.8 }}>
+                <span className="nav-item-icon">🎧</span>
+                <div style={{ fontSize: '0.85rem', lineHeight: '1.3' }}>
+                  <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                    {selectedPodcast.collectionName}
+                  </div>
+                  <div style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>
+                    by {selectedPodcast.artistName}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Bottom Section: About and License - truly stuck to bottom */}
+          <div style={{ 
+            marginTop: 'auto',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            paddingTop: '1rem',
+            paddingBottom: '1rem'
+          }}>
+            {/* About Section - Compact */}
+            <div style={{ marginBottom: '1rem' }}>
+              <h3 style={{ 
+                fontSize: '0.9rem',
+                margin: '0 0 0.5rem 0',
+                opacity: 0.8,
+                textAlign: 'center'
+              }}>About</h3>
+              <div style={{ 
+                fontSize: '0.8rem',
+                opacity: 0.6,
+                textAlign: 'center',
+                lineHeight: '1.4',
+                padding: '0 0.5rem'
+              }}>
+                Modern podcast discovery and transcription platform
+              </div>
+            </div>
+            
+            {/* License Acknowledgment - clickable small text */}
+            <div style={{ padding: '0 1rem' }}>
+              <div 
+                onClick={() => handleNavigation('license')}
+                style={{ 
+                  fontSize: '0.7rem',
+                  opacity: 0.5,
+                  color: 'var(--text-tertiary)',
+                  textAlign: 'center',
+                  lineHeight: '1.3',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s ease',
+                  textDecoration: 'underline',
+                  textDecorationColor: 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.opacity = '0.8';
+                  e.target.style.textDecorationColor = 'var(--text-tertiary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.opacity = '0.5';
+                  e.target.style.textDecorationColor = 'transparent';
+                }}
+              >
+                Licensed under MIT
+              </div>
+            </div>
           </div>
         </div>
       </nav>
