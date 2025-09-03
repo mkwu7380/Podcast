@@ -1,23 +1,16 @@
-const CACHE_NAME = 'podcasthub-v1';
+const CACHE_NAME = 'podcasthub-v2';
 const OFFLINE_PAGE = '/offline.html';
-const OFFLINE_IMG = '/icons/create-icons.svg';
+const OFFLINE_IMG = '/assets/images/create-icons.svg';
 
 const urlsToCache = [
   '/',
   '/index.html',
   '/offline.html',
-  '/styles.css',
-  '/app.js',
-  '/components/PodcastSearch.js',
-  '/components/PodcastList.js',
-  '/components/PodcastDetails.js',
-  '/components/AudioTranscription.js',
-  '/components/EpisodeSummary.js',
-  '/icons/create-icons.svg',
-  'https://unpkg.com/react@17/umd/react.development.js',
-  'https://unpkg.com/react-dom@17/umd/react-dom.development.js',
-  'https://unpkg.com/@babel/standalone/babel.min.js',
-  // Add any additional assets to cache
+  '/bundle.js',
+  '/manifest.json',
+  '/registerSW.js',
+  '/serviceWorker.js',
+  '/assets/images/create-icons.svg'
 ];
 
 // Define the transcription queue for background sync
@@ -25,6 +18,7 @@ const transcriptionQueue = new Set();
 
 // Install the service worker and cache initial assets
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -46,105 +40,75 @@ self.addEventListener('activate', event => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
 // Fetch event - respond with cached resource or fetch from network with offline fallback
 self.addEventListener('fetch', event => {
-  // Skip cross-origin requests like Google Analytics
-  if (!event.request.url.startsWith(self.location.origin) && 
-      !event.request.url.includes('unpkg.com')) {
+  const req = event.request;
+  const url = new URL(req.url);
+
+  // Skip unrelated cross-origin requests (allow unpkg for icons/fonts if needed)
+  if (url.origin !== self.location.origin && !url.href.includes('unpkg.com')) {
     return;
   }
 
-  // Handle API requests separately
-  if (event.request.url.includes('/api/')) {
+  // API: handle separately
+  if (url.pathname.startsWith('/api/')) {
     handleApiRequest(event);
     return;
   }
 
-  // Handle HTML page requests with offline fallback
-  if (event.request.headers.get('Accept').includes('text/html')) {
+  // Navigations/HTML: network-first with cache fallback (not offline page)
+  if (req.mode === 'navigate' || req.headers.get('Accept')?.includes('text/html')) {
     event.respondWith(
-      fetch(event.request)
+      fetch(req)
         .then(response => {
-          // Clone response for cache storage
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          caches.open(CACHE_NAME).then(cache => cache.put('/index.html', copy));
           return response;
         })
-        .catch(() => {
-          // Return offline page when HTML request fails
-          return caches.match(OFFLINE_PAGE);
-        })
+        .catch(() => caches.match('/index.html'))
     );
     return;
   }
 
-  // Handle image requests with SVG fallback
-  if (event.request.headers.get('Accept').includes('image')) {
+  // Images: cache-first with SVG fallback
+  if (req.headers.get('Accept')?.includes('image')) {
     event.respondWith(
-      caches.match(event.request)
-        .then(cachedResponse => {
-          return cachedResponse || fetch(event.request)
-            .then(response => {
-              // Cache successful image responses
-              if (response.ok) {
-                const responseToCache = response.clone();
-                caches.open(CACHE_NAME)
-                  .then(cache => cache.put(event.request, responseToCache));
-              }
-              return response;
-            })
-            .catch(() => {
-              // Return fallback image when request fails
-              return caches.match(OFFLINE_IMG);
-            });
-        })
+      caches.match(req).then(cached => {
+        return cached || fetch(req).then(response => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+          }
+          return response;
+        }).catch(() => caches.match(OFFLINE_IMG));
+      })
     );
     return;
   }
 
-  // Standard cache-first strategy for other requests
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - return the cached response
-        if (response) {
+  // JS/CSS and other static: cache-first
+  if (req.destination === 'script' || req.destination === 'style' || req.url.endsWith('.js') || req.url.endsWith('.css')) {
+    event.respondWith(
+      caches.match(req).then(cached => {
+        return cached || fetch(req).then(response => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+          }
           return response;
-        }
-
-        // No cache match - fetch from network
-        return fetch(event.request)
-          .then(response => {
-            // Check if valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Clone response to store in cache and return to browser
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                // Only cache same-origin requests
-                if (event.request.url.startsWith(self.location.origin)) {
-                  cache.put(event.request, responseToCache);
-                }
-              });
-
-            return response;
-          })
-          .catch(error => {
-            console.error('Fetch failed:', error);
-            // If it's a font request or non-HTML, we can't do much
-            // Return the offline page as a last resort for important resources
-            if (event.request.url.includes('.css') || 
-                event.request.url.includes('.js')) {
-              return caches.match(OFFLINE_PAGE);
-            }
-          });
+        });
       })
+    );
+    return;
+  }
+
+  // Default: try network, fall back to cache
+  event.respondWith(
+    fetch(req).catch(() => caches.match(req))
   );
 });
 

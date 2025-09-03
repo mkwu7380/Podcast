@@ -2,7 +2,7 @@
 
 A modern, responsive podcast application built with React, featuring a beautiful dashboard interface, PWA support, and offline capabilities.
 
-![Podcast App Screenshot](public/assets/images/screenshot.png)
+![Podcast App Screenshot](client/public/assets/images/screenshot.png)
 
 ## ✨ Features
 
@@ -28,85 +28,128 @@ A modern, responsive podcast application built with React, featuring a beautiful
 ### Installation
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/wuchunkin/Podcast.git
-   cd Podcast
-   ```
 
-2. Install dependencies:
-   ```bash
-   # Install Node.js dependencies
-   npm install
-   
-   # Install Python dependencies (for transcription)
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/yourusername/podcast-app.git
+cd podcast-app
+```
 
-3. Set up environment variables:
-   Create a `.env` file in the root directory with the following variables:
-   ```env
-   PORT=3000
-   NODE_ENV=development
-   WHISPER_MODEL=base  # or 'small', 'medium', 'large' based on your needs
-   ```
+2. Install server dependencies:
 
-4. Start the development server:
-   ```bash
-   # Start the backend server
-   npm run server
-   
-   # In a new terminal, start the frontend
-   npm start
-   ```
-   The app will be available at [http://localhost:3000](http://localhost:3000)
+```bash
+npm install
+```
+
+3. Install client dependencies:
+
+```bash
+cd client
+npm install
+cd ..
+```
+
+### Running the Application
+
+1. Start the server:
+
+```bash
+npm run dev
+```
+
+2. In a separate terminal, start the client:
+
+```bash
+npm run client
+```
+
+3. Open your browser and navigate to `http://localhost:3000`
+
+## 📁 Project Structure
+
+```
+├── client/                # Frontend React application
+│   ├── public/            # Static assets
+│   └── src/               # React source code
+│       ├── components/    # React components
+│       ├── contexts/      # React contexts
+│       ├── hooks/         # Custom React hooks
+│       ├── styles/        # CSS styles
+│       └── utils/         # Utility functions
+├── server/                # Backend Node.js application
+│   ├── config/            # Server configuration
+│   ├── controllers/       # Request controllers
+│   ├── middleware/        # Express middleware
+│   ├── models/            # Data models
+│   ├── routes/            # API routes
+│   ├── services/          # Business logic
+│   ├── utils/             # Utility functions
+│   └── websocket/         # WebSocket handlers
+├── shared/                # Shared code between client and server
+│   ├── constants/         # Shared constants
+│   └── types/             # Shared type definitions
+└── docs/                  # Documentation
+```
+
+## 🔧 Configuration
+
+Create a `.env` file in the server directory with the following variables:
+
+```env
+PORT=3001
+NODE_ENV=development
+WHISPER_MODEL=base  # or 'small', 'medium', 'large' based on your needs
+```
+
+## 🛠️ Development
+
+```bash
+# Start the backend server
+npm run dev
+
+# In a new terminal, start the frontend
+npm run client
+```
+
+The app will be available at [http://localhost:3000](http://localhost:3000)
 
 ## 🛠 Available Scripts
 
-- `npm start` - Starts the frontend development server
-- `npm run server` - Starts the backend server with hot-reload
-- `npm run build` - Builds the app for production to the `build` folder
+### Root Directory
+- `npm run dev` - Starts the backend server with hot-reload
+- `npm run client` - Starts the frontend development server
 - `npm test` - Launches the test runner
-- `npm run lint` - Runs ESLint to check code quality
-- `npm run format` - Formats code using Prettier
-- `npm run generate:docs` - Generates API documentation
+
+### Client Directory
+- `npm start` - Starts the frontend development server
+- `npm run build` - Builds the app for production to the `dist` folder
 
 ## 🏗 Project Architecture
 
-### Frontend Structure
+### Client Structure
 ```
-public/
-└── components/         # Frontend React components
-    ├── PodcastSearch.js      # Search input and form
-    ├── PodcastList.js        # Paginated podcast results
-    ├── PodcastDetails.js     # Detailed podcast view with episodes
-    └── AudioTranscription.js # Transcription functionality
-
-src/
-├── components/        # Reusable React components
-│   ├── layout/       # Layout components
-│   ├── pages/        # Page components
-│   └── ui/           # UI components (buttons, inputs, etc.)
-├── hooks/            # Custom React hooks
-├── services/         # API and service layer
-├── styles/           # Global styles and theme
-└── utils/            # Utility functions and helpers
+client/
+├── public/            # Static assets and HTML template
+└── src/               # React source code
+    ├── components/    # React components
+    │   ├── common/    # Common UI components
+    │   └── podcast/   # Podcast-specific components
+    ├── contexts/      # React contexts
+    ├── hooks/         # Custom React hooks
+    ├── styles/        # CSS styles
+    └── utils/         # Utility functions
 ```
 
-### Backend Structure
+### Server Structure
 ```
-src/
-├── controllers/           # API route handlers
-│   ├── podcastController.js
-│   └── transcriptionController.js
-├── services/             # Business logic
-│   └── transcriptionService.js
-├── middleware/           # Express middleware
-│   └── uploadMiddleware.js
-├── websocket/           # WebSocket handlers
-│   └── transcriptionHandler.js
-└── utils/               # Utility functions
-    ├── responseHelper.js
-    └── swaggerConfig.js
+server/
+├── config/           # Server configuration
+├── controllers/      # Request controllers
+├── middleware/       # Express middleware
+├── models/           # Data models
+├── routes/           # API routes
+├── services/         # Business logic
+├── utils/            # Utility functions
+└── websocket/        # WebSocket handlers
 ```
 
 ## 🛠 Development Guide

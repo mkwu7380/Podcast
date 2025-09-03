@@ -9,10 +9,16 @@ const transcriptionHandler = require('./src/websocket/transcriptionHandler');
 const { setupSwagger } = require('./src/utils/swaggerConfig');
 
 const app = express();
+const isProd = process.env.NODE_ENV === 'production';
 
 // Middleware setup
 app.use(express.json());
-app.use(express.static('public'));
+if (isProd) {
+  const clientDistPath = path.join(__dirname, 'client', 'dist');
+  app.use(express.static(clientDistPath));
+} else {
+  app.use(express.static('public'));
+}
 
 // Setup Swagger documentation
 setupSwagger(app);
@@ -28,6 +34,27 @@ app.get('/health', (req, res) => {
     service: 'Podcast API'
   });
 });
+
+// In production, serve SPA index.html for non-API routes
+if (isProd) {
+  const clientDistPath = path.join(__dirname, 'client', 'dist');
+  app.get('*', (req, res, next) => {
+    // Avoid intercepting API, docs, websocket, and health endpoints
+    if (
+      req.path.startsWith(config.apiBaseUrl) ||
+      req.path.startsWith('/api-docs') ||
+      req.path.startsWith('/ws') ||
+      req.path.startsWith('/health')
+    ) {
+      return next();
+    }
+    const accept = req.headers.accept || '';
+    if (accept.includes('text/html')) {
+      return res.sendFile(path.join(clientDistPath, 'index.html'));
+    }
+    next();
+  });
+}
 
 // Start HTTP server
 const server = app.listen(config.port, () => {

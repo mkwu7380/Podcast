@@ -26,10 +26,10 @@ const PodcastList = ({
       <div style={{ 
         textAlign: 'center', 
         padding: '3rem 2rem',
-        color: '#718096'
+        color: 'var(--text-secondary)'
       }}>
         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-        <h3 style={{ color: '#4a5568', marginBottom: '0.5rem' }}>No podcasts found</h3>
+        <h3 style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>No podcasts found</h3>
         <p>Try searching with different keywords or check your spelling.</p>
       </div>
     );
@@ -121,7 +121,7 @@ const PodcastList = ({
                     border: '1px solid var(--border-color)'
                   }}
                   onError={(e) => {
-                    e.target.style.background = 'linear-gradient(45deg, #667eea, #764ba2)';
+                    e.target.style.background = 'var(--accent-gradient-135)';
                     e.target.style.display = 'flex';
                     e.target.style.alignItems = 'center';
                     e.target.style.justifyContent = 'center';
@@ -160,7 +160,7 @@ const PodcastList = ({
                 {podcast.primaryGenreName && (
                   <span style={{
                     display: 'inline-block',
-                    background: '#667eea',
+                    background: 'var(--accent-primary)',
                     color: 'white',
                     padding: '0.25rem 0.75rem',
                     borderRadius: '20px',
@@ -187,7 +187,7 @@ const PodcastList = ({
               <div style={{ marginLeft: '1.5rem', flexShrink: 0, alignSelf: 'center' }}>
                 <button 
                   style={{
-                    background: '#667eea',
+                    background: 'var(--accent-primary)',
                     color: 'white',
                     border: 'none',
                     padding: '0.75rem 1.5rem',
@@ -202,10 +202,10 @@ const PodcastList = ({
                     onSelectPodcast(podcast);
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = '#5a67d8';
+                    e.target.style.background = 'rgba(var(--accent-rgb), 0.9)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = '#667eea';
+                    e.target.style.background = 'var(--accent-primary)';
                   }}
                 >
                   View Episodes
@@ -231,8 +231,8 @@ const PodcastList = ({
         }}>
           <button 
             style={{
-              background: currentPage === 1 ? '#e2e8f0' : '#667eea',
-              color: currentPage === 1 ? '#a0aec0' : 'white',
+              background: currentPage === 1 ? 'var(--bg-secondary)' : 'var(--accent-primary)',
+              color: currentPage === 1 ? 'var(--text-secondary)' : 'white',
               border: 'none',
               padding: '0.75rem 1rem',
               borderRadius: '8px',
@@ -258,8 +258,8 @@ const PodcastList = ({
           
           <button 
             style={{
-              background: currentPage === totalPages ? '#e2e8f0' : '#667eea',
-              color: currentPage === totalPages ? '#a0aec0' : 'white',
+              background: currentPage === totalPages ? 'var(--bg-secondary)' : 'var(--accent-primary)',
+              color: currentPage === totalPages ? 'var(--text-secondary)' : 'white',
               border: 'none',
               padding: '0.75rem 1rem',
               borderRadius: '8px',

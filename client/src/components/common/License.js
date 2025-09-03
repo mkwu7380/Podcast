@@ -1,81 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
 // Define the License component
 const License = () => {
-  const [licenseText, setLicenseText] = useState('Loading license information...');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const licenseText = `MIT License
 
-  useEffect(() => {
-    const fetchLicense = async () => {
-      try {
-        // Use the correct path to the LICENSE file in the public directory
-        const response = await fetch('/LICENSE', { 
-          headers: { 'Cache-Control': 'no-cache' } 
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to load license: ${response.status} ${response.statusText}`);
-        }
-        
-        const text = await response.text();
-        setLicenseText(text);
-      } catch (err) {
-        console.error('Error loading license:', err);
-        setError(`Failed to load license information: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
+Copyright (c) 2025 Podcast App Contributors
 
-    fetchLicense();
-  }, []);
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-  if (loading) {
-    return (
-      <div className="card fade-in">
-        <div className="card-header">
-          <h2 className="card-title">License</h2>
-        </div>
-        <div className="card-content" style={{ minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="loading">
-            <div className="spinner"></div>
-            <p>Loading license information...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-  if (error) {
-    return (
-      <div className="card fade-in">
-        <div className="card-header">
-          <h2 className="card-title">License</h2>
-        </div>
-        <div className="card-content" style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-          <div className="error-message" style={{ color: '#e74c3c', marginBottom: '1rem' }}>
-            <p>⚠️ {error}</p>
-          </div>
-          <button 
-            onClick={() => window.location.reload()} 
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#3498db',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              marginTop: '1rem'
-            }}
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.`;
 
   return (
     <div className="card fade-in">

@@ -25,128 +25,31 @@ const transcriptionQueue = new Set();
 
 // Install the service worker and cache initial assets
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-  );
+  // Deprecated SW: activate immediately; no caching.
+  self.skipWaiting();
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
+  event.waitUntil((async () => {
+    try {
+      // Clear all caches created by this SW
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+      // Unregister this deprecated SW
+      await self.registration.unregister();
+    } catch (e) {
+      // no-op
+    } finally {
+      // Refresh all controlled windows to detach from this SW
+      const clientsArr = await self.clients.matchAll({ type: 'window' });
+      clientsArr.forEach(client => client.navigate(client.url));
+    }
+  })());
 });
 
-// Fetch event - respond with cached resource or fetch from network with offline fallback
-self.addEventListener('fetch', event => {
-  // Skip cross-origin requests like Google Analytics
-  if (!event.request.url.startsWith(self.location.origin) && 
-      !event.request.url.includes('unpkg.com')) {
-    return;
-  }
-
-  // Handle API requests separately
-  if (event.request.url.includes('/api/')) {
-    handleApiRequest(event);
-    return;
-  }
-
-  // Handle HTML page requests with offline fallback
-  if (event.request.headers.get('Accept').includes('text/html')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          // Clone response for cache storage
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => {
-          // Return offline page when HTML request fails
-          return caches.match(OFFLINE_PAGE);
-        })
-    );
-    return;
-  }
-
-  // Handle image requests with SVG fallback
-  if (event.request.headers.get('Accept').includes('image')) {
-    event.respondWith(
-      caches.match(event.request)
-        .then(cachedResponse => {
-          return cachedResponse || fetch(event.request)
-            .then(response => {
-              // Cache successful image responses
-              if (response.ok) {
-                const responseToCache = response.clone();
-                caches.open(CACHE_NAME)
-                  .then(cache => cache.put(event.request, responseToCache));
-              }
-              return response;
-            })
-            .catch(() => {
-              // Return fallback image when request fails
-              return caches.match(OFFLINE_IMG);
-            });
-        })
-    );
-    return;
-  }
-
-  // Standard cache-first strategy for other requests
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - return the cached response
-        if (response) {
-          return response;
-        }
-
-        // No cache match - fetch from network
-        return fetch(event.request)
-          .then(response => {
-            // Check if valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Clone response to store in cache and return to browser
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                // Only cache same-origin requests
-                if (event.request.url.startsWith(self.location.origin)) {
-                  cache.put(event.request, responseToCache);
-                }
-              });
-
-            return response;
-          })
-          .catch(error => {
-            console.error('Fetch failed:', error);
-            // If it's a font request or non-HTML, we can't do much
-            // Return the offline page as a last resort for important resources
-            if (event.request.url.includes('.css') || 
-                event.request.url.includes('.js')) {
-              return caches.match(OFFLINE_PAGE);
-            }
-          });
-      })
-  );
-});
+// No-op fetch handler so network proceeds normally while this SW unregisters.
+self.addEventListener('fetch', () => {});
 
 // Handle API requests differently - network first, then fallback
 function handleApiRequest(event) {

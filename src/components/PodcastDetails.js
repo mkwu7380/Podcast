@@ -68,41 +68,23 @@ function PodcastDetails({
   return (
     <div className="podcast-details-container fade-in">
       {/* Header with Navigation */}
-      <div className="details-header" style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '2rem',
-        paddingBottom: '1rem',
-        borderBottom: '2px solid #e2e8f0'
-      }}>
+      <div className="details-header">
         <button 
-          className="btn btn-secondary"
+          className="btn btn-secondary btn-inline"
           onClick={onBack}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
         >
           <span>⬅️</span>
           Back to Results
         </button>
         
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem',
-          color: '#718096',
-          fontSize: '0.9rem'
-        }}>
-          <span style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ marginRight: '0.5rem' }}>🎧</span>
+        <div className="details-meta">
+          <span className="meta-item">
+            <span className="meta-icon">🎧</span>
             {episodes.length} episodes
           </span>
           {totalPages > 1 && (
-            <span style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ marginRight: '0.5rem' }}>📄</span>
+            <span className="meta-item">
+              <span className="meta-icon">📄</span>
               Page {currentPage} of {totalPages}
             </span>
           )}
@@ -110,48 +92,14 @@ function PodcastDetails({
       </div>
       
       {/* Podcast Overview Card */}
-      <div className="podcast-overview-card" style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        borderRadius: '16px',
-        padding: '2rem',
-        color: 'white',
-        marginBottom: '2rem',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          left: 0,
-          background: 'rgba(0, 0, 0, 0.1)',
-          backdropFilter: 'blur(1px)'
-        }}></div>
+      <div className="podcast-overview-card">
+        <div className="card-overlay"></div>
         
-        <div style={{
-          position: 'relative',
-          zIndex: 1,
-          display: 'grid',
-          gridTemplateColumns: 'auto 1fr',
-          gap: '2rem',
-          alignItems: 'start'
-        }}>
-          <div className="podcast-artwork" style={{
-            width: '120px',
-            height: '120px',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
-          }}>
+        <div className="overview-grid">
+          <div className="podcast-artwork">
             <img 
               src={podcast.artworkUrl600 || podcast.artworkUrl100} 
               alt={podcast.collectionName || podcast.trackName}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover'
-              }}
               onError={(e) => {
                 e.target.src = '/placeholder-podcast.png';
               }}
@@ -159,75 +107,33 @@ function PodcastDetails({
           </div>
           
           <div className="podcast-info">
-            <h2 style={{ 
-              fontSize: '1.6rem', 
-              fontWeight: '800', 
-              marginBottom: '0.5rem' 
-            }}>
+            <h1 className="podcast-title-large">
               {podcast.collectionName || podcast.trackName}
-            </h2>
+            </h1>
             
-            <p style={{ 
-              fontSize: '1.1rem', 
-              marginBottom: '1rem',
-              opacity: 0.9
-            }}>
+            <p className="podcast-subtitle">
               by {podcast.artistName}
             </p>
             
-            <div style={{ 
-              display: 'flex', 
-              gap: '1rem', 
-              flexWrap: 'wrap',
-              marginBottom: '1rem'
-            }}>
+            <div className="podcast-meta">
               {podcast.primaryGenreName && (
-                <span style={{ 
-                  background: 'rgba(255, 255, 255, 0.2)', 
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '20px',
-                  fontSize: '0.85rem',
-                  backdropFilter: 'blur(5px)'
-                }}>
-                  {podcast.primaryGenreName}
-                </span>
+                <div className="meta-item btn-inline">
+                  <span>🏷️</span>
+                  <span>{podcast.primaryGenreName}</span>
+                </div>
               )}
               
               {podcast.trackCount && (
-                <span style={{ 
-                  background: 'rgba(255, 255, 255, 0.2)', 
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '20px',
-                  fontSize: '0.85rem',
-                  backdropFilter: 'blur(5px)'
-                }}>
-                  {podcast.trackCount} episodes
-                </span>
-              )}
-              
-              {podcast.country && (
-                <span style={{ 
-                  background: 'rgba(255, 255, 255, 0.2)', 
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '20px',
-                  fontSize: '0.85rem',
-                  backdropFilter: 'blur(5px)'
-                }}>
-                  {podcast.country}
-                </span>
+                <div className="meta-item btn-inline">
+                  <span>📊</span>
+                  <span>{podcast.trackCount} episodes</span>
+                </div>
               )}
             </div>
             
             {podcast.longDescription || podcast.shortDescription || podcast.description ? (
-              <p style={{ 
-                fontSize: '0.95rem', 
-                lineHeight: '1.5',
-                opacity: 0.85,
-                maxHeight: '100px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
-                {podcast.longDescription || podcast.shortDescription || podcast.description}
+              <p className="episode-description">
+                {(podcast.longDescription || podcast.shortDescription || podcast.description)?.slice(0, 200)}...
               </p>
             ) : null}
           </div>
@@ -237,196 +143,101 @@ function PodcastDetails({
       {/* Episodes List */}
       <div className="episodes-container">
         {episodes.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '3rem',
-            color: 'var(--text-secondary)',
-            background: 'var(--bg-secondary)',
-            borderRadius: '12px'
-          }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-            <h3 style={{ marginBottom: '0.5rem' }}>No Episodes Found</h3>
+          <div className="empty-state">
+            <div className="empty-state-icon">🔍</div>
+            <h3>No Episodes Found</h3>
             <p>This podcast doesn't have any available episodes, or we couldn't load them.</p>
           </div>
         ) : (
           <>
-            <h3 style={{ 
-              fontSize: '1.25rem', 
-              marginBottom: '1.5rem',
-              fontWeight: '700',
-              color: 'var(--text-primary)'
-            }}>
-              Episodes
-            </h3>
+            <div className="section-header">
+              <h2 className="section-title">Episodes</h2>
+            </div>
             
-            <div className="episodes-list" style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem'
-            }}>
+            <div className="episodes-grid">
               {displayedEpisodes.map((episode, idx) => {
                 const isPlaying = playingEpisode && playingEpisode.guid === episode.guid;
                 return (
                   <div 
                     key={episode.guid || `episode-${idx}`}
-                    className={`episode-item ${isPlaying ? 'playing' : ''}`}
-                    style={{
-                      background: 'var(--bg-primary)',
-                      borderRadius: '12px',
-                      padding: '1.5rem',
-                      border: '1px solid var(--border-color)',
-                      transition: 'all 0.2s ease'
-                    }}
+                    className={`episode-card ${isPlaying ? 'playing' : ''}`}
                   >
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '1rem'
-                    }}>
+                    <div className="episode-header">
                       {/* Episode Number/Icon */}
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        background: isPlaying ? '#667eea' : 'var(--bg-secondary)',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        color: isPlaying ? 'white' : 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onClick={() => togglePlay(episode)}
+                      <div className="episode-number"
+                        onClick={episode.enclosure?.url ? () => togglePlay(episode) : undefined}
                       >
-                        {isPlaying ? '⏹️' : '▶️'}
+                        {isPlaying ? '⏸️' : (idx + 1)}
                       </div>
                       
                       {/* Episode Details */}
-                      <div style={{ flex: '1 1 auto' }}>
-                        <h4 style={{
-                          fontSize: '1.1rem',
-                          fontWeight: '600',
-                          marginBottom: '0.5rem',
-                          color: 'var(--text-primary)',
-                          lineHeight: '1.4'
-                        }}>
+                      <div className="episode-content">
+                        <h3 className="episode-title">
                           {episode.title || `Episode ${idx + 1}`}
-                        </h4>
+                        </h3>
                         
-                        <div style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: '1rem',
-                          fontSize: '0.85rem',
-                          color: 'var(--text-tertiary)',
-                          marginBottom: '1rem',
-                          alignItems: 'center'
-                        }}>
+                        <div className="episode-meta-row">
                           {episode.pubDate && (
-                            <span style={{ display: 'flex', alignItems: 'center' }}>
-                              <span style={{ marginRight: '0.25rem' }}>📅</span>
+                            <span className="meta-item">
+                              <span className="meta-icon-sm">📅</span>
                               {formatDate(episode.pubDate)}
                             </span>
                           )}
                           
                           {(episode.duration || episode.itunes?.duration) && (
-                            <span style={{ display: 'flex', alignItems: 'center' }}>
-                              <span style={{ marginRight: '0.25rem' }}>⏱️</span>
+                            <span className="meta-item">
+                              <span className="meta-icon-sm">⏱️</span>
                               {formatDuration(episode.duration || episode.itunes?.duration)}
                             </span>
                           )}
                         </div>
                         
                         {episode.description && (
-                          <p style={{
-                            fontSize: '0.95rem',
-                            color: 'var(--text-secondary)',
-                            lineHeight: '1.5',
-                            margin: 0,
-                            display: '-webkit-box',
-                            WebkitLineClamp: 3,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}>
-                            {episode.description.replace(/<[^>]*>/g, '')}
+                          <p className="episode-description">
+                            {episode.description.slice(0, 150)}...
                           </p>
                         )}
                       </div>
-                      
-                      {/* Actions */}
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.5rem'
-                      }}>
-                        <button
-                          onClick={() => togglePlay(episode)}
-                          style={{
-                            background: isPlaying ? '#e53e3e' : '#667eea',
-                            color: 'white',
-                            border: 'none',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '8px',
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          {isPlaying ? (
-                            <>
-                              <span>⏹️</span>
-                              Stop
-                            </>
-                          ) : (
-                            <>
-                              <span>▶️</span>
-                              Play
-                            </>
-                          )}
-                        </button>
-                        
-                        <button
-                          onClick={() => handleSummarizeEpisode(episode)}
-                          style={{
-                            background: 'var(--bg-secondary)',
-                            color: 'var(--text-primary)',
-                            border: '1px solid var(--border-color)',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '8px',
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          <span>🤖</span>
-                          AI Summary
-                        </button>
-                      </div>
+                    </div>
+                    
+                    <div className="episode-actions">
+                      {episode.enclosure?.url && (
+                        <>
+                          <button 
+                            className={`btn btn-sm ${isPlaying ? 'btn-secondary' : 'btn-primary'} btn-inline`}
+                            onClick={() => togglePlay(episode)}
+                          >
+                            <span>{isPlaying ? '⏸️' : '▶️'}</span>
+                            {isPlaying ? 'Pause' : 'Play'}
+                          </button>
+                          
+                          <a 
+                            href={episode.enclosure.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-outline btn-inline"
+                          >
+                            <span>🔗</span>
+                            Direct Link
+                          </a>
+                          
+                          <button 
+                            className="btn btn-sm btn-outline btn-inline"
+                            onClick={() => handleSummarizeEpisode(episode)}
+                            title="Generate AI summary of this episode"
+                          >
+                            <span>🤖</span>
+                            AI Summary
+                          </button>
+                        </>
+                      )}
                     </div>
                     
                     {isPlaying && episode.enclosure?.url && (
-                      <div className="audio-player" style={{
-                        marginTop: '1rem',
-                        padding: '1rem',
-                        background: 'rgba(102, 126, 234, 0.05)',
-                        borderRadius: '8px',
-                        border: '1px solid rgba(102, 126, 234, 0.1)'
-                      }}>
+                      <div className="audio-player">
                         <audio 
+                          className="audio-element"
                           controls 
-                          style={{ width: '100%' }}
                           onEnded={() => setPlayingEpisode(null)}
                         >
                           <source src={episode.enclosure.url} type="audio/mpeg" />
@@ -441,7 +252,7 @@ function PodcastDetails({
             
             {/* Enhanced Pagination */}
             {totalPages > 1 && (
-              <div className="pagination" style={{ marginTop: '2rem' }}>
+              <div className="pagination">
                 <button 
                   className="pagination-btn"
                   onClick={() => onPageChange(1)}
@@ -460,12 +271,7 @@ function PodcastDetails({
                   ⬅️ Previous
                 </button>
                 
-                <div className="pagination-info" style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  margin: '0 1rem'
-                }}>
+                <div className="pagination-info">
                   {[...Array(Math.min(5, totalPages))].map((_, i) => {
                     let pageNum;
                     if (totalPages <= 5) {

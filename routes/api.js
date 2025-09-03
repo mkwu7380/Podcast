@@ -36,6 +36,35 @@ router.post('/search', podcastController.searchPodcasts);
 
 /**
  * @swagger
+ * /api/generate-mindmap:
+ *   post:
+ *     summary: Generate mind map from transcript
+ *     tags: [AI Summary]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               transcript:
+ *                 type: string
+ *                 description: Episode transcript text
+ *               episodeInfo:
+ *                 type: object
+ *                 description: Episode metadata (title, description)
+ *     responses:
+ *       200:
+ *         description: Mind map generated successfully
+ *       400:
+ *         description: Invalid request
+ *       500:
+ *         description: Generation failed
+ */
+router.post('/generate-mindmap', summaryController.generateMindMap);
+
+/**
+ * @swagger
  * /api/episodes:
  *   post:
  *     summary: Fetch episodes for a podcast

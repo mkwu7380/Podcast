@@ -1,4 +1,6 @@
 const summaryService = require('../services/summaryService');
+const summaryServiceNew = require('../services/summaryServiceNew');
+const freeSummaryService = require('../services/freeSummaryService');
 const transcriptionService = require('../services/transcriptionService');
 const { createResponse, createErrorResponse } = require('../utils/responseHelper');
 
@@ -17,6 +19,8 @@ class SummaryController {
         return res.status(400).json(createErrorResponse('No audio file provided'));
       }
 
+      // Use free service if no API key is configured
+      const useFreeSummary = !process.env.GEMINI_API_KEY;
       const summaryType = req.body.type || 'comprehensive';
       const episodeInfo = {
         title: req.body.title,
@@ -34,9 +38,13 @@ class SummaryController {
       // Then generate summary
       let summaryResult;
       if (req.body.episodeSummary === 'true') {
-        summaryResult = await summaryService.generateEpisodeSummary(transcript, episodeInfo);
+        summaryResult = useFreeSummary 
+          ? await freeSummaryService.generateEpisodeSummary(transcript, episodeInfo)
+          : await summaryService.generateEpisodeSummary(transcript, episodeInfo);
       } else {
-        summaryResult = await summaryService.generateSummary(transcript, { type: summaryType });
+        summaryResult = useFreeSummary
+          ? await freeSummaryService.generateSummary(transcript, { type: summaryType })
+          : await summaryService.generateSummary(transcript, { type: summaryType });
       }
 
       // Clean up uploaded file
@@ -78,11 +86,18 @@ class SummaryController {
         return res.status(400).json(createErrorResponse('Transcript text is required'));
       }
 
+      // Use free service if no API key is configured
+      const useFreeSummary = !process.env.GEMINI_API_KEY;
+
       let summaryResult;
       if (episodeInfo) {
-        summaryResult = await summaryService.generateEpisodeSummary(transcriptText, episodeInfo);
+        summaryResult = useFreeSummary
+          ? await freeSummaryService.generateEpisodeSummary(transcriptText, episodeInfo)
+          : await summaryService.generateEpisodeSummary(transcriptText, episodeInfo);
       } else {
-        summaryResult = await summaryService.generateSummary(transcriptText, { type });
+        summaryResult = useFreeSummary
+          ? await freeSummaryService.generateSummary(transcriptText, { type })
+          : await summaryService.generateSummary(transcriptText, { type });
       }
 
       res.json(createResponse({
@@ -113,6 +128,9 @@ class SummaryController {
         return res.status(400).json(createErrorResponse('Audio URL is required'));
       }
 
+      // Use free service if no API key is configured
+      const useFreeSummary = !process.env.GEMINI_API_KEY;
+
       // Download and transcribe audio from URL
       const axios = require('axios');
       const fs = require('fs');
@@ -123,12 +141,20 @@ class SummaryController {
       const tempFile = path.join(tempDir, `temp_${Date.now()}.mp3`);
 
       try {
-        // Download audio file
+        // Download audio file with proper headers to avoid 403 errors
         const response = await axios({
           method: 'get',
           url: audioUrl,
           responseType: 'stream',
-          timeout: 60000 // 1 minute timeout
+          timeout: 60000, // 1 minute timeout
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'audio/mpeg, audio/mp4, audio/wav, audio/*, */*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
+          }
         });
 
         // Save to temporary file
@@ -150,9 +176,13 @@ class SummaryController {
         // Generate summary
         let summaryResult;
         if (episodeInfo) {
-          summaryResult = await summaryService.generateEpisodeSummary(transcript, episodeInfo);
+          summaryResult = useFreeSummary
+            ? await freeSummaryService.generateEpisodeSummary(transcript, episodeInfo)
+            : await summaryService.generateEpisodeSummary(transcript, episodeInfo);
         } else {
-          summaryResult = await summaryService.generateSummary(transcript, { type: summaryType });
+          summaryResult = useFreeSummary
+            ? await freeSummaryService.generateSummary(transcript, { type: summaryType })
+            : await summaryService.generateSummary(transcript, { type: summaryType });
         }
 
         // Clean up temporary file
@@ -231,6 +261,39 @@ class SummaryController {
     } catch (error) {
       console.error('Service status error:', error);
       res.status(500).json(createErrorResponse('Failed to get service status'));
+    }
+  }
+
+  /**
+   * Generate mind map from transcript
+   * @param {Request} req - Express request object
+   * @param {Response} res - Express response object
+   */
+  async generateMindMap(req, res) {
+    try {
+      const { transcript, episodeInfo = {} } = req.body;
+
+      if (!transcript || !transcript.trim()) {
+        return res.status(400).json(createErrorResponse('Transcript is required'));
+      }
+
+      // Use the new modular summary service for mind map generation
+      const mindMapData = await summaryServiceNew.generateMindMap(transcript, episodeInfo);
+
+      res.json(createResponse('Mind map generated successfully', {
+        mindMap: mindMapData,
+        metadata: {
+          transcriptLength: transcript.length,
+          processingTime: new Date().toISOString(),
+          aiConfigured: summaryServiceNew.isAiConfigured()
+        }
+      }));
+
+    } catch (error) {
+      console.error('Mind map generation error:', error);
+      res.status(500).json(createErrorResponse('Failed to generate mind map', {
+        error: error.message
+      }));
     }
   }
 }

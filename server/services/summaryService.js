@@ -1,12 +1,16 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 /**
- * Service for AI-powered podcast summarization using Google Gemini
+ * Service for AI-powered podcast summarization with multiple provider support
  */
 class SummaryService {
   constructor() {
-    // Configure Gemini AI service
+    // Configure AI service providers
     this.geminiApiKey = process.env.GEMINI_API_KEY;
+    this.cohereApiKey = process.env.COHERE_API_KEY;
+    this.openaiApiKey = process.env.OPENAI_API_KEY;
+    this.groqApiKey = process.env.GROQ_API_KEY;
+    
     this.defaultModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
     
     // Available Gemini models with their characteristics

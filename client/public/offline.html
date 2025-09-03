@@ -103,7 +103,7 @@
   <script>
     // Populate the list of available cached pages
     if ('caches' in window) {
-      caches.open('podcasthub-v1').then(cache => {
+      caches.open('podcasthub-v2').then(cache => {
         cache.keys().then(requests => {
           const cachedList = document.getElementById('cached-pages');
           const uniqueUrls = new Set();

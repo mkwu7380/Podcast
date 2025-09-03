@@ -29,7 +29,7 @@ function PodcastSearch({
     <div className="search-section">
       <div className="search-intro">
         <p style={{ 
-          color: '#718096', 
+          color: 'var(--text-secondary)', 
           fontSize: '0.95rem', 
           marginBottom: '1.5rem', 
           lineHeight: '1.5' 
@@ -103,13 +103,13 @@ function PodcastSearch({
           <div className="search-hints" style={{ 
             marginTop: '1rem', 
             padding: '1rem', 
-            background: 'rgba(102, 126, 234, 0.05)', 
+            background: 'rgba(var(--accent-rgb), 0.05)', 
             borderRadius: '8px',
-            border: '1px solid rgba(102, 126, 234, 0.1)'
+            border: '1px solid rgba(var(--accent-rgb), 0.1)'
           }}>
             <p style={{ 
               fontSize: '0.85rem', 
-              color: '#667eea', 
+              color: 'var(--accent-primary)', 
               margin: 0,
               display: 'flex',
               alignItems: 'center'
@@ -128,11 +128,11 @@ function PodcastSearch({
           textAlign: 'center'
         }}>
           <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
-          <p style={{ color: '#667eea', fontSize: '0.95rem' }}>
+          <p style={{ color: 'var(--accent-primary)', fontSize: '0.95rem' }}>
             🔍 Searching the podcast universe for "{podcastName}"...
           </p>
           <p style={{ 
-            color: '#a0aec0', 
+            color: 'var(--text-tertiary)', 
             fontSize: '0.85rem',
             marginTop: '0.5rem'
           }}>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './styles/styles.css';
 
 // Import components
@@ -7,6 +7,7 @@ import PodcastList from './components/podcast/PodcastList';
 import PodcastDetails from './components/podcast/PodcastDetails';
 import AudioTranscription from './components/AudioTranscription';
 import License from './components/common/License';
+import AISummaryMindMap from './components/common/AISummaryMindMap';
 
 /**
  * Main App Component - Modern Dashboard Layout with Sidebar Navigation
@@ -15,7 +16,46 @@ import License from './components/common/License';
 function App() {
   // State management
   const [darkMode, setDarkMode] = useState(false);
+  const [activeView, setActiveView] = useState('search');
+  const [podcastName, setPodcastName] = useState('');
+  const [podcasts, setPodcasts] = useState([]);
+  const [podcastPage, setPodcastPage] = useState(1);
+  const [selectedPodcast, setSelectedPodcast] = useState(null);
+  const [episodes, setEpisodes] = useState([]);
+  const [episodePage, setEpisodePage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [transcript, setTranscript] = useState('');
+  const [rtTranscript, setRtTranscript] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mindMapData, setMindMapData] = useState(null);
+  const [mindMapCache, setMindMapCache] = useState([]);
+  const audioRef = useRef();
+
+  // Load cached mind maps from localStorage on component mount
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('podcast-mindmap-cache');
+      if (cached) {
+        setMindMapCache(JSON.parse(cached));
+      }
+    } catch (error) {
+      console.error('Error loading mind map cache:', error);
+    }
+  }, []);
   
+  // Simple URL update function
+  const updateURL = (viewId) => {
+    const paths = {
+      'search': '/search-podcast',
+      'transcribe': '/audio-transcription',
+      'details': '/podcast-details',
+      'license': '/license'
+    };
+    const path = paths[viewId] || '/';
+    window.history.pushState(null, '', path);
+  };
+
   // Initialize dark mode based on system preference
   useEffect(() => {
     const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -29,49 +69,45 @@ function App() {
       root.style.setProperty('--text-primary', '#f7fafc');
       root.style.setProperty('--text-secondary', '#e2e8f0');
       root.style.setProperty('--text-tertiary', '#a0aec0');
-      root.style.setProperty('--border-color', 'rgba(255, 255, 255, 0.1)');
+      root.style.setProperty('--border-color', 'rgba(var(--neutral-rgb), 0.12)');
       root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.3)');
+      // Card tokens for dark
+      root.style.setProperty('--card-glass', 'rgba(26, 32, 44, 0.95)');
+      root.style.setProperty('--card-border', 'rgba(var(--neutral-rgb), 0.08)');
       // Dark mode gradient
       root.style.setProperty('--gradient-bg', 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)');
+      // Overlay tuning for dark
+      root.style.setProperty('--hero-overlay-alpha', '0.06');
+      root.style.setProperty('--hero-overlay-alpha-secondary', '0.06');
+      root.style.setProperty('--section-overlay-top', 'rgba(0, 0, 0, 0.08)');
+      root.style.setProperty('--section-overlay-bottom', 'rgba(0, 0, 0, 0.12)');
     } else {
       // Set light mode gradient by default
-      root.style.setProperty('--gradient-bg', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)');
+      root.style.setProperty('--gradient-bg', 'var(--accent-gradient-135)');
+      // Card tokens for light
+      root.style.setProperty('--card-glass', 'rgba(var(--neutral-rgb), 0.95)');
+      root.style.setProperty('--card-border', 'rgba(var(--neutral-rgb), 0.2)');
+      // Overlay tuning for light
+      root.style.setProperty('--hero-overlay-alpha', '0.12');
+      root.style.setProperty('--hero-overlay-alpha-secondary', '0.12');
+      root.style.setProperty('--section-overlay-top', 'rgba(var(--neutral-rgb), 0.06)');
+      root.style.setProperty('--section-overlay-bottom', 'rgba(0, 0, 0, 0.06)');
     }
   }, []);
-  const [activeView, setActiveView] = useState('search');
-  const [podcastName, setPodcastName] = useState('');
-  const [podcasts, setPodcasts] = useState([]);
-  const [podcastPage, setPodcastPage] = useState(1);
-  const [selectedPodcast, setSelectedPodcast] = useState(null);
-  const [episodes, setEpisodes] = useState([]);
-  const [episodePage, setEpisodePage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [transcript, setTranscript] = useState('');
-  const [rtTranscript, setRtTranscript] = useState('');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const audioRef = useRef();
 
   // Constants
   const PODCAST_PAGE_SIZE = 8;
   const EPISODES_PER_PAGE = 10;
+  const TITLE_SUFFIX = ' - PodcastHub';
 
-  // Define License component with fallback
-  const LicenseComponent = window.License || (() => (
-    <div className="card">
-      <div className="card-header">
-        <h2 className="card-title">License</h2>
-      </div>
-      <div className="card-content">
-        <p>License information could not be loaded. Please try again later.</p>
-      </div>
-    </div>
-  ));
+  // Use the imported License component
+  const LicenseComponent = License;
 
   // Main navigation items (excluding license - moved to footer)
   const navItems = [
     { id: 'search', label: 'Search Podcasts', icon: '🔍', active: activeView === 'search' },
     { id: 'transcribe', label: 'Audio Transcription', icon: '🎤', active: activeView === 'transcribe' },
+    { id: 'history', label: 'Mind Map History', icon: '📚', active: activeView === 'history' },
     ...(selectedPodcast ? [{ id: 'details', label: 'Podcast Details', icon: '📱', active: activeView === 'details' }] : [])
   ];
 
@@ -142,6 +178,7 @@ function App() {
   const handleSelectPodcast = (podcast) => {
     setSelectedPodcast(podcast);
     setActiveView('details');
+    updateURL('details');
     fetchAndSetEpisodes(podcast.feedUrl);
   };
 
@@ -191,7 +228,8 @@ function App() {
     setRtTranscript('');
     setError('');
     
-    const socket = new WebSocket(`ws://${window.location.host}/ws/transcribe`);
+    const wsUrl = `ws://${window.location.host}/ws/transcribe`;
+    const socket = new WebSocket(wsUrl);
     socket.binaryType = 'arraybuffer';
     
     socket.onmessage = (event) => {
@@ -229,6 +267,7 @@ function App() {
     setActiveView(viewId);
     setError('');
     setMobileMenuOpen(false);
+    updateURL(viewId, viewId === 'details' ? selectedPodcast : null);
     
     if (viewId === 'search') {
       setSelectedPodcast(null);
@@ -236,6 +275,32 @@ function App() {
       setPodcastName('');
       setEpisodes([]);
     }
+  };
+
+  const handleMindMapGenerated = (mindMapResult) => {
+    setMindMapData(mindMapResult);
+    
+    // Cache the mind map with timestamp and metadata
+    const cacheEntry = {
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      title: mindMapResult.title || 'Untitled Mind Map',
+      data: mindMapResult,
+      source: 'transcript'
+    };
+    
+    const newCache = [cacheEntry, ...mindMapCache.slice(0, 9)]; // Keep last 10
+    setMindMapCache(newCache);
+    
+    // Save to localStorage
+    try {
+      localStorage.setItem('podcast-mindmap-cache', JSON.stringify(newCache));
+    } catch (error) {
+      console.error('Error saving mind map cache:', error);
+    }
+    
+    // Automatically switch to history view when generated
+    handleNavigation('history');
   };
 
   const toggleDarkMode = () => {
@@ -251,21 +316,27 @@ function App() {
       root.style.setProperty('--text-primary', '#f7fafc');
       root.style.setProperty('--text-secondary', '#e2e8f0');
       root.style.setProperty('--text-tertiary', '#a0aec0');
-      root.style.setProperty('--border-color', 'rgba(255, 255, 255, 0.1)');
+      root.style.setProperty('--border-color', 'rgba(var(--neutral-rgb), 0.12)');
       root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.3)');
+      // Card tokens for dark
+      root.style.setProperty('--card-glass', 'rgba(26, 32, 44, 0.95)');
+      root.style.setProperty('--card-border', 'rgba(var(--neutral-rgb), 0.08)');
       // Dark mode gradient
       root.style.setProperty('--gradient-bg', 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)');
     } else {
       // Light theme colors
-      root.style.setProperty('--bg-primary', 'rgba(255, 255, 255, 0.95)');
+      root.style.setProperty('--bg-primary', 'rgba(var(--neutral-rgb), 0.95)');
       root.style.setProperty('--bg-secondary', 'rgba(248, 249, 250, 0.8)');
       root.style.setProperty('--text-primary', '#2d3748');
       root.style.setProperty('--text-secondary', '#4a5568');
       root.style.setProperty('--text-tertiary', '#718096');
       root.style.setProperty('--border-color', '#e2e8f0');
       root.style.setProperty('--shadow-color', 'rgba(0, 0, 0, 0.1)');
+      // Card tokens for light
+      root.style.setProperty('--card-glass', 'rgba(var(--neutral-rgb), 0.95)');
+      root.style.setProperty('--card-border', 'rgba(var(--neutral-rgb), 0.2)');
       // Light mode gradient
-      root.style.setProperty('--gradient-bg', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)');
+      root.style.setProperty('--gradient-bg', 'var(--accent-gradient-135)');
     }
   };
 
@@ -273,7 +344,7 @@ function App() {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  const getPageTitle = () => {
+  const getPageTitle = useCallback(() => {
     switch (activeView) {
       case 'search':
         return selectedPodcast ? `${selectedPodcast.collectionName}` : 'Discover Podcasts';
@@ -281,12 +352,33 @@ function App() {
         return selectedPodcast ? `${selectedPodcast.collectionName} - Episodes` : 'Podcast Details';
       case 'transcribe':
         return 'Audio Transcription';
+      case 'history':
+        return 'Mind Map History';
       case 'license':
         return 'License';
       default:
         return 'Podcast Hub';
     }
-  };
+  }, [activeView, selectedPodcast]);
+
+  // Keep browser tab title in sync with current view, always adding the suffix
+  // When searching: show contextual title like "<query> - Searching" or "<query> - Results"
+  useEffect(() => {
+    try {
+      let base = getPageTitle();
+      if (activeView === 'search') {
+        const q = (podcastName || '').trim();
+        if (loading) {
+          base = `${q ? q + ' - ' : ''}Searching`;
+        } else if (q) {
+          base = `${q} - Results`;
+        }
+      }
+      document.title = `${base}${TITLE_SUFFIX}`;
+    } catch (e) {
+      // no-op: document may be unavailable in some environments
+    }
+  }, [getPageTitle, activeView, podcastName, loading]);
 
   const renderMainContent = () => {
     switch (activeView) {
@@ -363,7 +455,180 @@ function App() {
                 error={error}
                 audioRef={audioRef}
                 loading={loading}
+                onMindMapGenerated={handleMindMapGenerated}
               />
+            </div>
+          </div>
+        );
+        
+      case 'mindmap':
+        return (
+          <div className="content-grid fade-in">
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Mind Map</h2>
+                <div className="card-badge">Interactive</div>
+              </div>
+              <AISummaryMindMap 
+                isVisible={true} 
+                compact={false} 
+                selectedPodcast={selectedPodcast}
+                summaryData={mindMapData}
+              />
+            </div>
+          </div>
+        );
+        
+      case 'history':
+        return (
+          <div className="content-grid fade-in">
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Mind Map History</h2>
+                <div className="card-badge">{mindMapCache.length} saved</div>
+              </div>
+              
+              {mindMapCache.length === 0 ? (
+                <div style={{ padding: '3rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🧠</div>
+                  <h3 style={{ color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>
+                    No Mind Maps Yet
+                  </h3>
+                  <p style={{ color: 'var(--text-tertiary)', margin: '0' }}>
+                    Generate your first mind map from audio transcription to see it here
+                  </p>
+                </div>
+              ) : (
+                <div style={{ padding: '1.5rem' }}>
+                  <div style={{
+                    display: 'grid',
+                    gap: '1rem',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))'
+                  }}>
+                    {mindMapCache.map((cacheEntry, index) => (
+                      <div
+                        key={cacheEntry.id}
+                        onClick={() => {
+                          setMindMapData(cacheEntry.data);
+                          setActiveView('mindmap');
+                        }}
+                        style={{
+                          background: 'var(--bg-primary)',
+                          border: '2px solid var(--border-color)',
+                          borderRadius: '12px',
+                          padding: '1.5rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--accent-primary)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--border-color)';
+                          e.currentTarget.style.transform = 'translateY(0px)';
+                          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                        }}
+                      >
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          marginBottom: '1rem'
+                        }}>
+                          <h4 style={{
+                            color: 'var(--text-primary)',
+                            margin: '0',
+                            fontSize: '1.1rem',
+                            fontWeight: '600',
+                            lineHeight: '1.3'
+                          }}>
+                            {cacheEntry.title}
+                          </h4>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const newCache = mindMapCache.filter(item => item.id !== cacheEntry.id);
+                              setMindMapCache(newCache);
+                              localStorage.setItem('podcast-mindmap-cache', JSON.stringify(newCache));
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--text-tertiary)',
+                              cursor: 'pointer',
+                              padding: '0.25rem',
+                              borderRadius: '4px',
+                              fontSize: '0.9rem'
+                            }}
+                            title="Delete mind map"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        
+                        <div style={{
+                          fontSize: '0.85rem',
+                          color: 'var(--text-secondary)',
+                          marginBottom: '1rem',
+                          lineHeight: '1.4'
+                        }}>
+                          {cacheEntry.data.overview?.slice(0, 120) + (cacheEntry.data.overview?.length > 120 ? '...' : '')}
+                        </div>
+                        
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          fontSize: '0.8rem',
+                          color: 'var(--text-tertiary)'
+                        }}>
+                          <span>
+                            {new Date(cacheEntry.timestamp).toLocaleDateString()} at {new Date(cacheEntry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </span>
+                          <span style={{
+                            background: 'var(--bg-secondary)',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem'
+                          }}>
+                            {cacheEntry.source}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {mindMapCache.length > 0 && (
+                    <div style={{
+                      marginTop: '2rem',
+                      padding: '1rem',
+                      background: 'var(--bg-secondary)',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)',
+                      textAlign: 'center'
+                    }}>
+                      <button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to clear all cached mind maps?')) {
+                            setMindMapCache([]);
+                            localStorage.removeItem('podcast-mindmap-cache');
+                          }
+                        }}
+                        className="btn btn-secondary"
+                        style={{
+                          fontSize: '0.85rem',
+                          padding: '0.5rem 1rem'
+                        }}
+                      >
+                        🗑️ Clear All History
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         );
@@ -397,7 +662,7 @@ function App() {
             {/* Clean Logo Section with Theme Toggle in Top Right */}
             <div style={{ 
               padding: '0 0 1rem 0',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              borderBottom: '1px solid var(--border-color)',
               position: 'relative'
             }}>
               {/* Theme Toggle - Top Right Corner */}
@@ -414,7 +679,7 @@ function App() {
                   padding: '0.4rem',
                   borderRadius: '6px',
                   transition: 'all 0.2s ease',
-                  backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                  backgroundColor: 'var(--bg-secondary-hover)',
                   fontSize: '1rem',
                   width: '2rem',
                   height: '2rem'
@@ -457,7 +722,10 @@ function App() {
               <div 
                 key={item.id}
                 className={`nav-item ${item.active ? 'active' : ''}`}
-                onClick={() => handleNavigation(item.id)}
+                onClick={() => {
+                  handleNavigation(item.id);
+                }}
+                style={{ cursor: 'pointer', userSelect: 'none' }}
               >
                 <span className="nav-item-icon">{item.icon}</span>
                 {item.label}
@@ -485,7 +753,7 @@ function App() {
           {/* Bottom Section: About and License - truly stuck to bottom */}
           <div style={{ 
             marginTop: 'auto',
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            borderTop: '1px solid var(--border-color)',
             paddingTop: '1rem',
             paddingBottom: '1rem'
           }}>

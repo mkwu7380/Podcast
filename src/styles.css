@@ -13,6 +13,8 @@
   --text-primary: #1a202c;
   --text-secondary: #4a5568;
   --text-tertiary: #718096;
+  /* Neutral tint used across overlays/highlights */
+  --neutral-rgb: 255, 255, 255;
   
   /* Border Radius */
   --radius-sm: 0.25rem;
@@ -674,7 +676,7 @@ textarea:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(var(--neutral-rgb), 0.5);
   z-index: 10;
   border-radius: inherit;
 }
@@ -952,7 +954,7 @@ textarea:focus {
 .search-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 102, 126, 234), 0.2);
 }
 
 .search-input::placeholder {
@@ -1010,7 +1012,7 @@ textarea:focus {
 .spinner {
   width: 1.5rem;
   height: 1.5rem;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  border: 3px solid rgba(var(--neutral-rgb), 0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 1s infinite linear;
@@ -1080,7 +1082,7 @@ textarea:focus {
 
 .drop-area:hover, .drop-area.drag-active {
   border-color: var(--primary-color);
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(var(--accent-rgb, 102, 126, 234), 0.05);
 }
 
 .drop-icon {

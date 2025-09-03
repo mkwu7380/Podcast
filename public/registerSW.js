@@ -1,12 +1,8 @@
 // Register service worker for PWA functionality
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/serviceWorker.js')
-      .then(registration => {
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-      })
-      .catch(error => {
-        console.log('ServiceWorker registration failed: ', error);
-      });
+    // Root SW registration disabled to avoid conflicts with client app SW.
+    // Consolidated to use client/public/serviceWorker.js only.
+    console.log('[registerSW] Root SW registration disabled; using client/public service worker.');
   });
 }

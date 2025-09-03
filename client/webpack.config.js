@@ -56,9 +56,9 @@ module.exports = {
     static: {
       directory: path.join(__dirname, 'public')
     },
-    port: 3001,
+    port: 3000,
     proxy: {
-      '/api': 'http://localhost:3000'
+      '/api': `http://localhost:${process.env.API_PORT || 3001}`
     }
   }
 };

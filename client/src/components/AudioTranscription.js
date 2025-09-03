@@ -10,12 +10,14 @@ const AudioTranscription = ({
   transcript, 
   rtTranscript, 
   error,
-  audioRef 
+  audioRef,
+  onMindMapGenerated 
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isRealTimeActive, setIsRealTimeActive] = useState(false);
+  const [isGeneratingMindMap, setIsGeneratingMindMap] = useState(false);
 
   const handleFileSelect = (file) => {
     setSelectedFile(file);
@@ -43,6 +45,42 @@ const AudioTranscription = ({
     const audioFile = files.find(file => file.type.startsWith('audio/'));
     if (audioFile) {
       handleFileSelect(audioFile);
+    }
+  };
+
+  const handleGenerateMindMap = async () => {
+    if (!transcript || !transcript.trim()) {
+      return;
+    }
+
+    setIsGeneratingMindMap(true);
+    try {
+      const response = await fetch('/api/generate-mindmap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcript: transcript,
+          episodeInfo: {
+            title: selectedFile?.name || 'Audio Transcript',
+            description: 'Generated from uploaded audio file'
+          }
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Call parent component handler to pass mind map data
+        if (onMindMapGenerated) {
+          onMindMapGenerated(data.data.mindMap);
+        }
+      } else {
+        console.error('Mind map generation failed:', data.message);
+      }
+    } catch (error) {
+      console.error('Mind map generation error:', error);
+    } finally {
+      setIsGeneratingMindMap(false);
     }
   };
 
@@ -134,7 +172,7 @@ const AudioTranscription = ({
           <div 
             className={`file-drop-zone ${isDragOver ? 'drag-over' : ''}`}
             style={{
-              border: `2px dashed ${isDragOver ? '#667eea' : 'var(--border-color)'}`,
+              border: `2px dashed ${isDragOver ? 'var(--accent-primary)' : 'var(--border-color)'}`,
               borderRadius: '12px',
               padding: '3rem 2rem',
               textAlign: 'center',
@@ -163,7 +201,7 @@ const AudioTranscription = ({
             <div style={{
               fontSize: '3rem',
               marginBottom: '1rem',
-              color: isDragOver ? '#667eea' : 'var(--text-tertiary)'
+              color: isDragOver ? 'var(--accent-primary)' : 'var(--text-tertiary)'
             }}>
               {selectedFile ? '🎧' : '📁'}
             </div>
@@ -171,7 +209,7 @@ const AudioTranscription = ({
             {selectedFile ? (
               <div className="selected-file-info">
                 <h4 style={{
-                  color: '#2d3748',
+                  color: 'var(--text-primary)',
                   marginBottom: '0.5rem',
                   fontSize: '1.1rem'
                 }}>
@@ -182,7 +220,7 @@ const AudioTranscription = ({
                   justifyContent: 'center',
                   gap: '2rem',
                   marginBottom: '1rem',
-                  color: '#718096',
+                  color: 'var(--text-tertiary)',
                   fontSize: '0.9rem'
                 }}>
                   <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -357,6 +395,29 @@ const AudioTranscription = ({
                 gap: '0.5rem'
               }}>
                 <button 
+                  onClick={handleGenerateMindMap}
+                  disabled={isGeneratingMindMap || !transcript.trim()}
+                  className="btn btn-sm btn-primary"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  {isGeneratingMindMap ? (
+                    <>
+                      <div className="spinner" style={{ width: '0.8rem', height: '0.8rem' }}></div>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <span>🧠</span>
+                      Mind Map
+                    </>
+                  )}
+                </button>
+                
+                <button 
                   onClick={() => navigator.clipboard.writeText(transcript)}
                   className="btn btn-sm btn-outline"
                   title="Copy transcript to clipboard"
@@ -409,7 +470,7 @@ const AudioTranscription = ({
                 margin: 0,
                 fontFamily: 'inherit',
                 fontSize: '0.95rem',
-                color: '#2d3748'
+                color: 'var(--text-primary)'
               }}>
                 {transcript}
               </pre>
@@ -516,7 +577,7 @@ const AudioTranscription = ({
                 margin: 0,
                 fontFamily: 'inherit',
                 fontSize: '0.95rem',
-                color: '#2d3748'
+                color: 'var(--text-primary)'
               }}>
                 {rtTranscript}
               </pre>
