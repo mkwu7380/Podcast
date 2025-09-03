@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PodcastHub - Offline</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .offline-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+    }
+    
+    .offline-icon {
+      font-size: 5rem;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+    
+    .offline-title {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+    
+    .offline-message {
+      margin-bottom: 2rem;
+      color: var(--text-secondary);
+      max-width: 500px;
+    }
+    
+    .reload-button {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .reload-button:hover {
+      background: var(--primary-color-dark);
+    }
+    
+    .cached-content {
+      margin-top: 3rem;
+      width: 100%;
+      max-width: 600px;
+    }
+    
+    .cached-title {
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+    
+    .cached-list {
+      text-align: left;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 1rem;
+      list-style-type: none;
+    }
+    
+    .cached-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .cached-list li:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <div class="offline-icon">📶</div>
+    <h1 class="offline-title">You're offline</h1>
+    <p class="offline-message">
+      It seems you're not connected to the internet right now. Some features of PodcastHub may not work properly.
+      You can still access previously loaded content.
+    </p>
+    
+    <button class="reload-button" onclick="window.location.reload()">
+      Try Again
+    </button>
+    
+    <div class="cached-content">
+      <h2 class="cached-title">Available Offline</h2>
+      <ul class="cached-list" id="cached-pages">
+        <li><a href="/">Home</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Populate the list of available cached pages
+    if ('caches' in window) {
+      caches.open('podcasthub-v1').then(cache => {
+        cache.keys().then(requests => {
+          const cachedList = document.getElementById('cached-pages');
+          const uniqueUrls = new Set();
+          
+          requests.forEach(request => {
+            const url = new URL(request.url);
+            
+            // Only show HTML pages from our domain
+            if (url.origin === location.origin && 
+                !url.pathname.includes('.') || 
+                url.pathname.endsWith('.html')) {
+              
+              const pathName = url.pathname === '/' ? 'Home' : 
+                              url.pathname.split('/').pop().replace('.html', '');
+              const displayUrl = pathName.charAt(0).toUpperCase() + pathName.slice(1);
+              
+              // Avoid duplicates
+              if (!uniqueUrls.has(displayUrl)) {
+                uniqueUrls.add(displayUrl);
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = url.pathname;
+                a.textContent = displayUrl;
+                li.appendChild(a);
+                cachedList.appendChild(li);
+              }
+            }
+          });
+        });
+      });
+    }
+  </script>
+</body>
+</html>

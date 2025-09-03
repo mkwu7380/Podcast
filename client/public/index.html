@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PodcastHub</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="description" content="Discover, Listen, and Transcribe Podcasts">
+  <meta name="theme-color" content="#3a7bd5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PodcastHub">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- PWA Icons -->
+  <link rel="icon" href="/icons/create-icons.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/create-icons.svg">
+  <link rel="mask-icon" href="/icons/create-icons.svg" color="#3a7bd5">
+  
+  <!-- App Stylesheets -->  
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="root"></div>
+  
+  <!-- Load bundled React app -->
+  <!-- Register Service Worker -->
+  <script src="/registerSW.js"></script>
+  
+  <!-- PWA Notification Support (removed: notification-helper.js not present) -->
+</body>
+</html>

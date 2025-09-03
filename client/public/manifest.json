@@ -1,0 +1,17 @@
+{
+  "name": "PodcastHub",
+  "short_name": "PodcastHub",
+  "description": "Discover, Listen, and Transcribe Podcasts",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#2a3f54",
+  "theme_color": "#3a7bd5",
+  "icons": [
+    {
+      "src": "/icons/create-icons.svg",
+      "sizes": "72x72 96x96 128x128 144x144 152x152 192x192 384x384 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
