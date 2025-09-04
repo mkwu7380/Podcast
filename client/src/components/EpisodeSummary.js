@@ -4,11 +4,12 @@ import { createPortal } from 'react-dom';
 /**
  * Component for episode summarization functionality
  */
-const EpisodeSummary = ({ episode, onClose }) => {
+const EpisodeSummary = ({ episode, onClose, onMindMapGenerated }) => {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [summaryType, setSummaryType] = useState('comprehensive');
+  const [mindMapLoading, setMindMapLoading] = useState(false);
   
   // Modal dragging and resizing state
   const [position, setPosition] = useState({ x: 100, y: 100 });
@@ -75,6 +76,87 @@ const EpisodeSummary = ({ episode, onClose }) => {
       // Could add a toast notification here
       console.log('Copied to clipboard');
     });
+  };
+
+  const handleGenerateMindMap = async () => {
+    if (!summary) {
+      setError('No summary available to generate mind map');
+      return;
+    }
+
+    setMindMapLoading(true);
+    setError('');
+
+    try {
+      // Convert summary to transcript-like format for mind map generation
+      const transcript = formatSummaryAsTranscript(summary);
+      
+      const response = await fetch('/api/generate-mindmap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          transcript: transcript,
+          episodeInfo: {
+            title: episode.title,
+            pubDate: episode.pubDate,
+            duration: episode.duration || episode.itunes?.duration,
+            source: 'episode-summary'
+          }
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Call the callback to handle mind map generation
+        if (onMindMapGenerated) {
+          onMindMapGenerated(data.data.mindMap, {
+            title: episode.title,
+            source: 'episode-summary',
+            timestamp: new Date().toISOString()
+          });
+        }
+        // Close the summary modal after generating mind map
+        onClose();
+      } else {
+        setError(data.error || 'Failed to generate mind map');
+      }
+    } catch (err) {
+      console.error('Mind map generation error:', err);
+      setError('Error connecting to server for mind map generation');
+    } finally {
+      setMindMapLoading(false);
+    }
+  };
+
+  const formatSummaryAsTranscript = (summaryData) => {
+    // Convert structured summary to a narrative format for mind map generation
+    let transcript = '';
+    
+    if (summaryData.summary && typeof summaryData.summary === 'object') {
+      if (summaryData.summary.overview) {
+        transcript += `Episode Overview: ${summaryData.summary.overview}\n\n`;
+      }
+      if (summaryData.summary.keyPoints) {
+        transcript += `Key Points Discussed: ${summaryData.summary.keyPoints}\n\n`;
+      }
+      if (summaryData.summary.topics) {
+        transcript += `Main Topics: ${summaryData.summary.topics}\n\n`;
+      }
+      if (summaryData.summary.quotes) {
+        transcript += `Notable Quotes: ${summaryData.summary.quotes}\n\n`;
+      }
+      if (summaryData.summary.actionItems) {
+        transcript += `Action Items: ${summaryData.summary.actionItems}\n\n`;
+      }
+    } else {
+      // Simple text summary
+      transcript = summaryData.summary?.summary || summaryData.summary || '';
+    }
+    
+    return transcript.trim();
   };
 
   const formatSummaryAsMindMap = (summaryData) => {
@@ -382,6 +464,14 @@ const EpisodeSummary = ({ episode, onClose }) => {
                   title="Copy summary as mind map to clipboard"
                 >
                   📋 Copy Mind Map
+                </button>
+                <button 
+                  className="generate-mindmap-btn"
+                  onClick={handleGenerateMindMap}
+                  disabled={mindMapLoading}
+                  title="Generate interactive mind map visualization"
+                >
+                  {mindMapLoading ? '🔄 Generating...' : '🧠 Generate Mind Map'}
                 </button>
               </div>
             </div>

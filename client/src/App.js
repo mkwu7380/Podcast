@@ -426,8 +426,14 @@ function App() {
               episodes={episodes}
               currentPage={episodePage}
               pageSize={EPISODES_PER_PAGE}
+              episodesLoading={episodesLoading}
+              error={error}
+              hasMoreEpisodes={hasMoreEpisodes}
+              totalEpisodes={totalEpisodes}
               onPageChange={setEpisodePage}
+              loadMoreEpisodes={loadMoreEpisodes}
               onBack={() => handleNavigation('search')}
+              onMindMapGenerated={handleMindMapGenerated}
             />
           </div>
         ) : (

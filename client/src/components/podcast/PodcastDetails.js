@@ -8,10 +8,16 @@ import EpisodeSummary from '../EpisodeSummary';
 const PodcastDetails = ({ 
   podcast, 
   episodes, 
+  episodesLoading, 
+  error, 
+  loadMoreEpisodes, 
+  hasMoreEpisodes, 
+  totalEpisodes,
   currentPage, 
   pageSize, 
   onPageChange, 
-  onBack 
+  onBack,
+  onMindMapGenerated 
 }) => {
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
@@ -328,6 +334,7 @@ const PodcastDetails = ({
         <EpisodeSummary 
           episode={selectedEpisode}
           onClose={closeSummary}
+          onMindMapGenerated={onMindMapGenerated}
         />
       )}
     </div>
