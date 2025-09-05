@@ -56,7 +56,7 @@ class SummaryService {
   }
 
   /**
-   * Generate podcast episode summary with structured sections
+   * Generate podcast episode summary with structured sections using chunked approach
    * @param {string} transcript - Episode transcript
    * @param {Object} episodeInfo - Episode metadata
    * @param {Object} options - Processing options
@@ -64,10 +64,153 @@ class SummaryService {
    */
   async generateEpisodeSummary(transcript, episodeInfo = {}, options = {}) {
     try {
+      // For long transcripts, use chunked summarization approach
+      if (transcript.split(' ').length > 2400) {
+        return await this.generateChunkedEpisodeSummary(transcript, episodeInfo, options);
+      }
+      
+      // For shorter transcripts, use direct summarization
       return await episodeSummary.generateEpisodeSummary(transcript, episodeInfo, options);
     } catch (error) {
       throw new Error(`Episode summary generation failed: ${error.message}`);
     }
+  }
+
+  /**
+   * Generate episode summary using chunked approach for long transcripts
+   * @param {string} transcript - Full episode transcript  
+   * @param {Object} episodeInfo - Episode metadata
+   * @param {Object} options - Processing options
+   * @returns {Promise<Object>} Comprehensive episode summary
+   */
+  async generateChunkedEpisodeSummary(transcript, episodeInfo = {}, options = {}) {
+    try {
+      console.log('Using chunked summarization for long transcript');
+      
+      // Step 1: Split transcript into larger chunks suitable for podcast content
+      const totalWords = transcript.split(' ').length;
+      const chunkSize = Math.max(800, Math.floor(totalWords / 3)); // At least 800 words per chunk, or 1/3 of content
+      const chunks = this.splitTranscriptIntoChunks(transcript, chunkSize);
+      console.log(`Split transcript into ${chunks.length} chunks`);
+      
+      // Step 2: Generate summary for each chunk
+      const chunkSummaries = [];
+      for (let i = 0; i < chunks.length; i++) {
+        console.log(`Processing chunk ${i + 1}/${chunks.length}`);
+        
+        try {
+          const chunkSummary = await summaryGenerator.generateSummary(chunks[i], {
+            type: 'brief',
+            maxTokens: 200,
+            customPrompt: `Analyze this part of a podcast episode and provide:
+1. A brief 2-3 sentence summary of key points
+2. 3-5 most important keywords (comma-separated)
+
+Format your response as:
+SUMMARY: [your summary here]
+KEYWORDS: [keyword1, keyword2, keyword3, ...]`
+          });
+          
+          // Parse the response to extract summary and keywords
+          const responseText = chunkSummary.summary || '';
+          const summaryMatch = responseText.match(/SUMMARY:\s*(.*?)(?=KEYWORDS:|$)/s);
+          const keywordsMatch = responseText.match(/KEYWORDS:\s*(.*?)$/s);
+          
+          const extractedSummary = summaryMatch ? summaryMatch[1].trim() : responseText;
+          const extractedKeywords = keywordsMatch 
+            ? keywordsMatch[1].trim().split(',').map(k => k.trim()).filter(k => k)
+            : [];
+          
+          chunkSummaries.push({
+            chunkIndex: i + 1,
+            summary: extractedSummary,
+            keywords: extractedKeywords,
+            wordCount: chunks[i].split(' ').length
+          });
+        } catch (chunkError) {
+          console.warn(`Failed to summarize chunk ${i + 1}:`, chunkError.message);
+          // Continue with other chunks
+        }
+      }
+      
+      // Step 3: Create table format using keywords as headers
+      const allKeywords = chunkSummaries.flatMap(chunk => chunk.keywords);
+      const uniqueKeywords = [...new Set(allKeywords)];
+      
+      // Group summaries by keywords for table format
+      const keywordTable = {};
+      uniqueKeywords.forEach(keyword => {
+        keywordTable[keyword] = chunkSummaries
+          .filter(chunk => chunk.keywords.includes(keyword))
+          .map(chunk => `Part ${chunk.chunkIndex}: ${chunk.summary}`)
+          .join('\n');
+      });
+      
+      // Step 4: Combine all chunk summaries for comprehensive analysis
+      const combinedSummaryText = chunkSummaries
+        .map(chunk => `Part ${chunk.chunkIndex} (Keywords: ${chunk.keywords.join(', ')}): ${chunk.summary}`)
+        .join('\n\n');
+      
+      console.log(`Generated ${chunkSummaries.length} chunk summaries with ${uniqueKeywords.length} unique keywords`);
+      
+      // Step 5: Generate final structured summary from combined summaries
+      const finalSummary = await episodeSummary.generateEpisodeSummary(
+        combinedSummaryText, 
+        episodeInfo, 
+        {
+          ...options,
+          isFromChunks: true,
+          chunkCount: chunks.length,
+          customPrompt: `Based on these episode part summaries with keywords, create a comprehensive structured analysis:`
+        }
+      );
+      
+      // Add metadata about chunking process and keyword table
+      return {
+        ...finalSummary,
+        keywordTable: keywordTable,
+        chunkDetails: chunkSummaries.map(chunk => ({
+          chunkIndex: chunk.chunkIndex,
+          keywords: chunk.keywords,
+          summary: chunk.summary,
+          wordCount: chunk.wordCount
+        })),
+        processingInfo: {
+          method: 'Chunked AI Summarization with Keywords',
+          chunkCount: chunks.length,
+          chunkSummaries: chunkSummaries.length,
+          uniqueKeywords: uniqueKeywords.length,
+          keywordList: uniqueKeywords,
+          originalWordCount: transcript.split(' ').length,
+          compressionRatio: `${Math.round((transcript.split(' ').length / combinedSummaryText.split(' ').length) * 10) / 10}:1`
+        }
+      };
+      
+    } catch (error) {
+      console.error('Chunked episode summary failed:', error.message);
+      // Fallback to basic summarization
+      return await episodeSummary.generateEpisodeSummary(transcript.slice(0, 4000), episodeInfo, options);
+    }
+  }
+
+  /**
+   * Split transcript into word-based chunks
+   * @param {string} transcript - Full transcript text
+   * @param {number} wordsPerChunk - Target words per chunk (default: 300)
+   * @returns {Array<string>} Array of transcript chunks
+   */
+  splitTranscriptIntoChunks(transcript, wordsPerChunk = 300) {
+    const words = transcript.split(' ');
+    const chunks = [];
+    
+    for (let i = 0; i < words.length; i += wordsPerChunk) {
+      const chunk = words.slice(i, i + wordsPerChunk).join(' ');
+      if (chunk.trim()) {
+        chunks.push(chunk.trim());
+      }
+    }
+    
+    return chunks;
   }
 
   /**

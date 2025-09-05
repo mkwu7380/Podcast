@@ -24,6 +24,9 @@ function App() {
   const [episodes, setEpisodes] = useState([]);
   const [episodePage, setEpisodePage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [episodesLoading, setEpisodesLoading] = useState(false);
+  const [hasMoreEpisodes, setHasMoreEpisodes] = useState(false);
+  const [totalEpisodes, setTotalEpisodes] = useState(0);
   const [error, setError] = useState('');
   const [transcript, setTranscript] = useState('');
   const [rtTranscript, setRtTranscript] = useState('');
@@ -151,7 +154,7 @@ function App() {
   };
 
   const fetchAndSetEpisodes = async (feedUrl) => {
-    setLoading(true);
+    setEpisodesLoading(true);
     try {
       const res = await fetch('/api/episodes', {
         method: 'POST',
@@ -162,16 +165,19 @@ function App() {
       const data = await res.json();
       
       if (res.ok) {
-        setEpisodes(data.episodes || []);
+        const episodes = data.episodes || [];
+        setEpisodes(episodes);
         setEpisodePage(1);
+        setTotalEpisodes(episodes.length);
+        setHasMoreEpisodes(false); // Since we're fetching all episodes at once
       } else {
-        setError(data.error || 'Failed to fetch episodes.');
+        setError(data.error || 'Failed to fetch episodes');
       }
-    } catch (e) {
-      console.error('Episodes fetch error:', e);
-      setError('Error connecting to server.');
+    } catch (err) {
+      console.error('Error fetching episodes:', err);
+      setError('Error connecting to server');
     } finally {
-      setLoading(false);
+      setEpisodesLoading(false);
     }
   };
 
@@ -180,6 +186,12 @@ function App() {
     setActiveView('details');
     updateURL('details');
     fetchAndSetEpisodes(podcast.feedUrl);
+  };
+
+  const loadMoreEpisodes = () => {
+    // For now, since we fetch all episodes at once, this is a no-op
+    // Could be implemented for paginated episode loading in the future
+    console.log('Load more episodes requested');
   };
 
   const handleTranscribe = async (e) => {

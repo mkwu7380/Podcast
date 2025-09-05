@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import EpisodeSummary from '../EpisodeSummary';
 
 /**
@@ -22,6 +22,14 @@ const PodcastDetails = ({
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
   const [playingEpisode, setPlayingEpisode] = useState(null);
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleSummarizeEpisode = (episode) => {
     setSelectedEpisode(episode);
@@ -29,11 +37,15 @@ const PodcastDetails = ({
   };
 
   const closeSummary = () => {
-    setShowSummary(false);
-    setSelectedEpisode(null);
+    if (isMountedRef.current) {
+      setShowSummary(false);
+      setSelectedEpisode(null);
+    }
   };
 
   const togglePlay = (episode) => {
+    if (!isMountedRef.current) return;
+    
     if (playingEpisode && playingEpisode.guid === episode.guid) {
       setPlayingEpisode(null);
     } else {

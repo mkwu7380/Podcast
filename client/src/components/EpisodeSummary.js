@@ -21,6 +21,14 @@ const EpisodeSummary = ({ episode, onClose, onMindMapGenerated }) => {
   
   const modalRef = useRef(null);
   const centeredOnce = useRef(false);
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const summaryTypes = [
     { value: 'brief', label: 'Brief Summary', description: '2-3 sentences overview' },
@@ -56,7 +64,20 @@ const EpisodeSummary = ({ episode, onClose, onMindMapGenerated }) => {
         })
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        if (response.status === 504) {
+          setError('Request timeout - audio file may be too large or server is busy. Please try again.');
+        } else {
+          setError('Server returned invalid response. Please try again.');
+        }
+        return;
+      }
+
+      if (!isMountedRef.current) return;
 
       if (response.ok) {
         setSummary(data.data);
@@ -65,9 +86,13 @@ const EpisodeSummary = ({ episode, onClose, onMindMapGenerated }) => {
       }
     } catch (err) {
       console.error('Summary error:', err);
-      setError('Error connecting to server');
+      if (isMountedRef.current) {
+        setError('Error connecting to server');
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -88,16 +113,14 @@ const EpisodeSummary = ({ episode, onClose, onMindMapGenerated }) => {
     setError('');
 
     try {
-      // Convert summary to transcript-like format for mind map generation
-      const transcript = formatSummaryAsTranscript(summary);
-      
+      // Send the existing summary data directly for mind map conversion
       const response = await fetch('/api/generate-mindmap', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          transcript: transcript,
+          summaryData: summary, // Send the actual summary data
           episodeInfo: {
             title: episode.title,
             pubDate: episode.pubDate,
@@ -107,27 +130,51 @@ const EpisodeSummary = ({ episode, onClose, onMindMapGenerated }) => {
         })
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        setError('Server returned invalid response for mind map generation');
+        return;
+      }
+
+      console.log('Mind map API response:', data);
 
       if (response.ok && data.success) {
-        // Call the callback to handle mind map generation
-        if (onMindMapGenerated) {
-          onMindMapGenerated(data.data.mindMap, {
-            title: episode.title,
-            source: 'episode-summary',
-            timestamp: new Date().toISOString()
-          });
+        // Handle different possible response structures
+        const mindMapData = data.data?.mindMap || data.mindMap || data.data;
+        
+        if (mindMapData) {
+          // Call the callback to handle mind map generation
+          if (onMindMapGenerated) {
+            onMindMapGenerated(mindMapData, {
+              title: episode.title,
+              source: 'episode-summary',
+              timestamp: new Date().toISOString()
+            });
+          }
+          // Close the summary modal after generating mind map
+          onClose();
+        } else {
+          if (isMountedRef.current) {
+            setError('Invalid mind map data received from server');
+          }
         }
-        // Close the summary modal after generating mind map
-        onClose();
       } else {
-        setError(data.error || 'Failed to generate mind map');
+        if (isMountedRef.current) {
+          setError(data.error || 'Failed to generate mind map');
+        }
       }
     } catch (err) {
       console.error('Mind map generation error:', err);
-      setError('Error connecting to server for mind map generation');
+      if (isMountedRef.current) {
+        setError('Error connecting to server for mind map generation');
+      }
     } finally {
-      setMindMapLoading(false);
+      if (isMountedRef.current) {
+        setMindMapLoading(false);
+      }
     }
   };
 
@@ -242,7 +289,108 @@ const EpisodeSummary = ({ episode, onClose, onMindMapGenerated }) => {
   };
 
   const formatSummaryContent = (summaryData) => {
-    if (summaryData.summary && typeof summaryData.summary === 'object') {
+    // Check if this is a chunked summary with keywords
+    if (summaryData.keywordTable && summaryData.chunkDetails) {
+      return (
+        <div className="chunked-summary">
+          {/* Display processing info */}
+          {summaryData.processingInfo && (
+            <div className="processing-info" style={{marginBottom: '20px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '5px', fontSize: '14px'}}>
+              <strong>处理方式：</strong>{summaryData.processingInfo.method}<br/>
+              <strong>分段数量：</strong>{summaryData.processingInfo.chunkCount} | 
+              <strong>关键字：</strong>{summaryData.processingInfo.uniqueKeywords}个 | 
+              <strong>压缩比：</strong>{summaryData.processingInfo.compressionRatio}
+            </div>
+          )}
+
+          {/* Keyword-based table */}
+          <div className="keyword-table-section">
+            <h4>🗂️ 关键字分类总结</h4>
+            <div className="keyword-table" style={{overflowX: 'auto', marginBottom: '20px'}}>
+              <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '14px'}}>
+                <thead>
+                  <tr style={{backgroundColor: '#667eea', color: 'white'}}>
+                    <th style={{padding: '12px', border: '1px solid #ddd', textAlign: 'left'}}>关键字</th>
+                    <th style={{padding: '12px', border: '1px solid #ddd', textAlign: 'left'}}>相关内容</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(summaryData.keywordTable).map(([keyword, content], index) => (
+                    <tr key={keyword} style={{backgroundColor: index % 2 === 0 ? '#f9f9f9' : 'white'}}>
+                      <td style={{padding: '12px', border: '1px solid #ddd', fontWeight: 'bold', verticalAlign: 'top', minWidth: '120px'}}>
+                        {keyword}
+                      </td>
+                      <td style={{padding: '12px', border: '1px solid #ddd', lineHeight: '1.5'}}>
+                        {content}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Chunk details */}
+          <div className="chunk-details-section">
+            <h4>📚 分段详情</h4>
+            <div className="chunk-grid" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px', marginBottom: '20px'}}>
+              {summaryData.chunkDetails.map((chunk) => (
+                <div key={chunk.chunkIndex} className="chunk-card" style={{border: '1px solid #ddd', borderRadius: '8px', padding: '15px', backgroundColor: '#fafafa'}}>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px'}}>
+                    <h5 style={{margin: '0', color: '#667eea'}}>第 {chunk.chunkIndex} 段</h5>
+                    <span style={{fontSize: '12px', color: '#666'}}>{chunk.wordCount} 字</span>
+                  </div>
+                  <div style={{marginBottom: '10px'}}>
+                    <strong>关键字：</strong>
+                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '5px'}}>
+                      {chunk.keywords.map((keyword, i) => (
+                        <span key={i} style={{
+                          backgroundColor: '#667eea', 
+                          color: 'white', 
+                          padding: '2px 8px', 
+                          borderRadius: '12px', 
+                          fontSize: '12px'
+                        }}>
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <p style={{margin: '0', lineHeight: '1.4', fontSize: '14px'}}>{chunk.summary}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Regular structured summary if available */}
+          {summaryData.summary && typeof summaryData.summary === 'object' && (
+            <div className="structured-summary">
+              <h4>🎯 综合分析</h4>
+              {summaryData.summary.overview && (
+                <div className="summary-section">
+                  <h5>📋 总览</h5>
+                  <p>{summaryData.summary.overview}</p>
+                </div>
+              )}
+              
+              {summaryData.summary.keyPoints && (
+                <div className="summary-section">
+                  <h5>🔑 要点</h5>
+                  <p>{summaryData.summary.keyPoints}</p>
+                </div>
+              )}
+              
+              {summaryData.summary.topics && (
+                <div className="summary-section">
+                  <h5>🎯 主题</h5>
+                  <p>{summaryData.summary.topics}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    } else if (summaryData.summary && typeof summaryData.summary === 'object') {
       // Structured episode summary
       return (
         <div className="structured-summary">

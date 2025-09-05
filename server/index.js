@@ -47,12 +47,15 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(clientServePath, 'index.html'));
 });
 
-// Start HTTP server
-const server = app.listen(config.port, () => {
-  console.log(`🚀 Podcast API server running at http://localhost:${config.port}`);
-  console.log(`📚 API Documentation available at http://localhost:${config.port}/api-docs`);
-  console.log(`🔊 WebSocket endpoint: ws://localhost:${config.port}/ws/transcribe`);
+// Start the server
+const PORT = process.env.PORT || 3001;
+const server = app.listen(PORT, () => {
+  console.log(`🚀 Podcast API server running at http://localhost:${PORT}`);
+  console.log(`📚 API Documentation available at http://localhost:${PORT}/api-docs`);
 });
+
+// Increase server timeout for long-running transcription operations
+server.timeout = 600000; // 10 minutes
 
 // Setup WebSocket server for real-time transcription
 const wss = new WebSocketServer({ 
