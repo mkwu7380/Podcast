@@ -1,0 +1,32 @@
+[build]
+  base = "client"
+  publish = "dist"
+  command = "npm install && npm run build"
+
+[build.environment]
+  NODE_ENV = "production"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://your-backend-url.railway.app/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/ws/*"
+  to = "https://your-backend-url.railway.app/ws/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  framework = "#custom"
+  command = "npm start"
+  targetPort = 3000
+  port = 8888
+  publish = "dist"
+  autoLaunch = false
