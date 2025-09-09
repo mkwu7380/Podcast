@@ -1,5 +1,5 @@
-# Multi-stage build for efficient Docker image
-FROM node:18-bullseye-slim as builder
+# Single-stage build for better Python package handling
+FROM node:18-bullseye-slim
 
 # Install system dependencies for Python and audio processing
 RUN apt-get update && apt-get install -y \
@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     ffmpeg \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -28,24 +29,6 @@ COPY . .
 
 # Build the client
 RUN cd client && npm run build
-
-# Production stage
-FROM node:18-bullseye-slim
-
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Copy built application from builder stage
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/client/dist ./client/dist
-COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
-COPY --from=builder /app .
 
 # Create uploads directory
 RUN mkdir -p uploads
