@@ -1,0 +1,12 @@
+# Minimal Python dependencies for faster builds
+# Core dependencies
+python-dotenv>=0.19.0
+
+# Web server (optional - for standalone Python API)
+fastapi>=0.68.0
+uvicorn>=0.15.0
+python-multipart>=0.0.5
+
+# Audio processing (lighter alternative)
+# whisper-cpp-python>=0.1.0  # Much faster than openai-whisper
+# OR use API-based transcription instead of local models

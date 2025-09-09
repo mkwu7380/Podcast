@@ -1,0 +1,35 @@
+# Lightweight Node.js only build (without Python dependencies)
+FROM node:18-alpine
+
+# Install basic dependencies
+RUN apk add --no-cache \
+    curl \
+    bash
+
+WORKDIR /app
+
+# Copy and install Node.js dependencies
+COPY package*.json ./
+COPY client/package*.json ./client/
+RUN npm ci --only=production
+RUN cd client && npm ci && npm run build
+
+# Copy source code (excluding Python)
+COPY . .
+
+# Create uploads directory
+RUN mkdir -p uploads
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# Start the application (without Python transcription)
+CMD ["npm", "start"]
