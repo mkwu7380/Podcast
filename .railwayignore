@@ -1,0 +1,8 @@
+python/
+requirements*.txt
+*.py
+__pycache__/
+.env
+uploads/*.mp3
+uploads/*.wav
+uploads/*.m4a
