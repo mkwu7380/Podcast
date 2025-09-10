@@ -8,13 +8,13 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://your-backend-url.railway.app/api/:splat"
+  to = "https://podcast-production-9a44.up.railway.app/api/:splat"
   status = 200
   force = true
 
 [[redirects]]
   from = "/ws/*"
-  to = "https://your-backend-url.railway.app/ws/:splat"
+  to = "https://podcast-production-9a44.up.railway.app/ws/:splat"
   status = 200
   force = true
 
