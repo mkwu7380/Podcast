@@ -4,9 +4,10 @@
   "description": "A simple Node.js app to scrape podcasts from RSS feeds",
   "main": "server/index.js",
   "scripts": {
-    "start": "nodemon server/index.js || node server/index.js",
-    "dev": "nodemon server/index.js",
-    "client": "cd client && npm start"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "client": "cd client && npm start",
+    "build": "cd client && npm install && npm run build"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
