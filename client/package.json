@@ -10,11 +10,29 @@
     "test": "echo \"Error: no test specified\" && exit 0",
     "preinstall": "node -v || exit 1",
     "lint": "eslint src --ext .js,.jsx",
-    "format": "prettier --write \"src/**/*.{js,jsx,json,css,scss}\""
+    "format": "prettier --write \"src/**/*.{js,jsx,json,css,scss}\"",
+    "netlify-build": "npm install --force && npm run build"
   },
   "engines": {
-    "node": ">=16.14.0 <17.0.0"
+    "node": "16.14.0",
+    "npm": "8.19.4"
   },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "cacheDirectories": [
+    "node_modules",
+    ".npm"
+  ],
   "dependencies": {
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -47,17 +65,5 @@
     "webpack-dev-server": "^4.7.4",
     "webpack-merge": "^5.8.0",
     "workbox-webpack-plugin": "^6.4.2"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   }
 }
