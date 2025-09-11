@@ -4,7 +4,9 @@
   command = "npm run netlify-build"
 
 [build.environment]
+  NODE_VERSION = "16.14.0"
   NODE_ENV = "production"
+  CI = false
 
 [[redirects]]
   from = "/api/*"
@@ -22,11 +24,3 @@
   from = "/*"
   to = "/index.html"
   status = 200
-
-[dev]
-  framework = "#custom"
-  command = "npm start"
-  targetPort = 3000
-  port = 8888
-  publish = "dist"
-  autoLaunch = false
