@@ -53,6 +53,8 @@
     "workbox-webpack-plugin": "^6.4.2",
     "clean-webpack-plugin": "^4.0.0",
     "webpack-manifest-plugin": "^5.0.0",
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "babel-plugin-transform-remove-console": "^6.9.4",
+    "babel-plugin-transform-react-remove-prop-types": "^0.4.24"
   }
 }
