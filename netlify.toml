@@ -33,8 +33,6 @@
   NPM_CONFIG_LOGLEVEL = "warn"
   # Disable telemetry
   NEXT_TELEMETRY_DISABLED = "1"
-  # Disable package-lock.json
-  NPM_CONFIG_PACKAGE_LOCK = "false"
 
 # Production context settings
 [context.production]
