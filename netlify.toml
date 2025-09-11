@@ -25,10 +25,9 @@
 # Production context settings
 [context.production]
   command = "npm install && npm run build"
-  environment = { 
-    NODE_ENV = "production",
+  [context.production.environment]
+    NODE_ENV = "production"
     NODE_OPTIONS = "--max_old_space_size=1024"
-  }
 
 # Security headers
 [[headers]]
