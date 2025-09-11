@@ -6,25 +6,39 @@
   # Directory containing the built files
   publish = "dist"
   # Command to build the site
-  command = "npm install && npm run build"
+  command = "chmod +x netlify-build.sh && ./netlify-build.sh"
 
 [build.environment]
-  # Set Node.js version
+  # Set Node.js version - must match .nvmrc
   NODE_VERSION = "16.14.0"
-  # Set npm flags
-  NPM_FLAGS = "--version"
+  # Set npm version
+  NPM_VERSION = "8.19.4"
   # Set environment to production
   NODE_ENV = "production"
   # Disable CI to prevent build issues
   CI = "false"
-  # Disable telemetry to speed up builds
-  NEXT_TELEMETRY_DISABLED = "1"
-  # Optimize npm cache
+  # Disable package-lock generation during install
+  NPM_CONFIG_PACKAGE_LOCK = "false"
+  # Disable npm update notifier
+  NPM_CONFIG_UPDATE_NOTIFIER = "false"
+  # Set npm cache directory
   NPM_CONFIG_CACHE = "/opt/build/.npm"
+  # Enable npm cache
+  NPM_CONFIG_CACHE_MIN = "9999999"
+  # Disable npm fund messages
+  NPM_CONFIG_FUND = "false"
+  # Disable npm audit
+  NPM_CONFIG_AUDIT = "false"
+  # Set npm log level
+  NPM_CONFIG_LOGLEVEL = "warn"
+  # Disable telemetry
+  NEXT_TELEMETRY_DISABLED = "1"
+  # Disable package-lock.json
+  NPM_CONFIG_PACKAGE_LOCK = "false"
 
 # Production context settings
 [context.production]
-  command = "npm install && npm run build"
+  command = "chmod +x netlify-build.sh && ./netlify-build.sh"
   [context.production.environment]
     NODE_ENV = "production"
     NODE_OPTIONS = "--max_old_space_size=1024"
