@@ -18,10 +18,14 @@
     }],
     ["@babel/plugin-transform-class-properties", { "loose": true }],
     ["@babel/plugin-transform-private-methods", { "loose": true }],
-    ["@babel/plugin-transform-private-property-in-object", { "loose": true }],
-    "react-refresh/babel"
+    ["@babel/plugin-transform-private-property-in-object", { "loose": true }]
   ],
   "env": {
+    "development": {
+      "plugins": [
+        "react-refresh/babel"
+      ]
+    },
     "production": {
       "plugins": [
         ["transform-react-remove-prop-types", { "removeImport": true }],
