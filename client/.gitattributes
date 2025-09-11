@@ -1,0 +1,278 @@
+# Set default behavior to automatically normalize line endings
+* text=auto eol=lf
+
+# Declare files that will always have CRLF line endings on checkout
+*.{cmd,[cC][mM][dD]} text eol=crlf
+*.{bat,[bB][aA][tT]} text eol=crlf
+
+# Denote all files that are truly binary and should not be modified
+*.{png,jpg,jpeg,gif,ico,pdf,woff,woff2,eot,ttf,otf} binary
+*.{zip,exe,dll,bin} binary
+
+# Force LF line endings on text files
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.sass text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.graphql text eol=lf
+*.graphqls text eol=lf
+*.gql text eol=lf
+*.sql text eol=lf
+*.sh text eol=lf
+
+# Force CRLF line endings on Windows-specific files
+*.{cmd,[cC][mM][dD]} text eol=crlf
+*.{bat,[bB][aA][tT]} text eol=crlf
+
+# Binary files should be left untouched
+*.{png,jpg,jpeg,gif,ico,pdf,woff,woff2,eot,ttf,otf} binary
+*.{zip,exe,dll,bin} binary
+
+# Define merge strategy for package-lock.json and yarn.lock to prevent conflicts
+package-lock.json merge=union
+yarn.lock merge=union
+
+# Define merge strategy for lock files
+*-lock.json merge=union
+*.lock merge=union
+
+# Define merge strategy for common config files
+.editorconfig merge=union
+.eslintrc merge=union
+.prettierrc merge=union
+.stylelintrc merge=union
+.babelrc merge=union
+*.babelrc merge=union
+*.browserslistrc merge=union
+*.eslintrc.js merge=union
+*.prettierrc.js merge=union
+*.stylelintrc.js merge=union
+*.babelrc.js merge=union
+*.browserslistrc.js merge=union
+
+# Define merge strategy for dotfiles
+.*ignore merge=union
+.gitattributes merge=union
+.gitconfig merge=union
+.gitmodules merge=union
+
+# Define merge strategy for common config files
+*.config.js merge=union
+*.conf.js merge=union
+*.webpack.config.js merge=union
+*.babel.config.js merge=union
+*.eslint.config.js merge=union
+*.prettier.config.js merge=union
+*.stylelint.config.js merge=union
+*.postcss.config.js merge=union
+*.browserslistrc merge=union
+*.browserslist merge=union
+
+# Define merge strategy for common config files
+*.json merge=union
+*.yaml merge=union
+*.yml merge=union
+*.toml merge=union
+*.ini merge=union
+*.conf merge=union
+*.cfg merge=union
+*.properties merge=union
+
+# Define merge strategy for common source files
+*.js merge=union
+*.jsx merge=union
+*.ts merge=union
+*.tsx merge=union
+*.css merge=union
+*.scss merge=union
+*.sass merge=union
+*.less merge=union
+*.styl merge=union
+*.html merge=union
+*.htm merge=union
+*.xml merge=union
+*.svg merge=union
+*.md merge=union
+*.txt merge=union
+
+# Define merge strategy for common test files
+*.test.js merge=union
+*.spec.js merge=union
+*.test.jsx merge=union
+*.spec.jsx merge=union
+*.test.ts merge=union
+*.spec.ts merge=union
+*.test.tsx merge=union
+*.spec.tsx merge=union
+*.test.css merge=union
+*.spec.css merge=union
+*.test.scss merge=union
+*.spec.scss merge=union
+*.test.sass merge=union
+*.spec.sass merge=union
+*.test.less merge=union
+*.spec.less merge=union
+*.test.styl merge=union
+*.spec.styl merge=union
+*.test.html merge=union
+*.spec.html merge=union
+*.test.htm merge=union
+*.spec.htm merge=union
+*.test.xml merge=union
+*.spec.xml merge=union
+*.test.svg merge=union
+*.spec.svg merge=union
+*.test.md merge=union
+*.spec.md merge=union
+*.test.txt merge=union
+*.spec.txt merge=union
+
+# Define merge strategy for common documentation files
+README* merge=union
+CHANGELOG* merge=union
+HISTORY* merge=union
+LICENSE* merge=union
+NOTICE* merge=union
+CONTRIBUTING* merge=union
+CODE_OF_CONDUCT* merge=union
+SECURITY* merge=union
+AUTHORS* merge=union
+MAINTAINERS* merge=union
+
+# Define merge strategy for common configuration files
+.editorconfig merge=union
+.eslintignore merge=union
+.prettierignore merge=union
+.stylelintignore merge=union
+.gitattributes merge=union
+.gitignore merge=union
+.gitmodules merge=union
+.gitkeep merge=union
+.gitconfig merge=union
+.gitmessage merge=union
+.git-blame-ignore merge=union
+.git-blame-ignore-revs merge=union
+.git-blame-ignore-revs.js merge=union
+.git-blame-ignore-revs.json merge=union
+.git-blame-ignore-revs.yaml merge=union
+.git-blame-ignore-revs.yml merge=union
+.git-blame-ignore-revs.toml merge=union
+.git-blame-ignore-revs.ini merge=union
+.git-blame-ignore-revs.cfg merge=union
+.git-blame-ignore-revs.properties merge=union
+.git-blame-ignore-revs.txt merge=union
+.git-blame-ignore-revs.md merge=union
+
+# Define merge strategy for common build files
+Makefile merge=union
+GNUmakefile merge=union
+makefile merge=union
+*.mk merge=union
+*.make merge=union
+*.sh merge=union
+*.bash merge=union
+*.zsh merge=union
+*.fish merge=union
+*.ps1 merge=union
+*.psm1 merge=union
+*.psd1 merge=union
+*.ps1xml merge=union
+*.psc1 merge=union
+*.pssc merge=union
+*.cdxml merge=union
+*.xaml merge=union
+*.ps1xml merge=union
+*.psm1 merge=union
+*.psd1 merge=union
+*.ps1 merge=union
+*.psm1 merge=union
+*.psd1 merge=union
+*.ps1xml merge=union
+*.psc1 merge=union
+*.pssc merge=union
+*.cdxml merge=union
+*.xaml merge=union
+*.ps1xml merge=union
+*.psm1 merge=union
+*.psd1 merge=union
+*.ps1 merge=union
+*.psm1 merge=union
+*.psd1 merge=union
+*.ps1xml merge=union
+*.psc1 merge=union
+*.pssc merge=union
+*.cdxml merge=union
+*.xaml merge=union
+*.ps1xml merge=union
+*.psm1 merge=union
+*.psd1 merge=union
+
+# Define merge strategy for common documentation files
+*.md merge=union
+*.markdown merge=union
+*.mdown merge=union
+*.mdwn merge=union
+*.mkd merge=union
+*.mkdn merge=union
+*.mdtxt merge=union
+*.mdtext merge=union
+*.text merge=union
+*.txt merge=union
+*.rdoc merge=union
+*.pod merge=union
+*.1 merge=union
+*.2 merge=union
+*.3 merge=union
+*.4 merge=union
+*.5 merge=union
+*.6 merge=union
+*.7 merge=union
+*.8 merge=union
+*.9 merge=union
+*.man merge=union
+*.me merge=union
+*.ms merge=union
+*.1x merge=union
+*.2x merge=union
+*.3x merge=union
+*.4x merge=union
+*.5x merge=union
+*.6x merge=union
+*.7x merge=union
+*.8x merge=union
+*.9x merge=union
+*.1xx merge=union
+*.2xx merge=union
+*.3xx merge=union
+*.4xx merge=union
+*.5xx merge=union
+*.6xx merge=union
+*.7xx merge=union
+*.8xx merge=union
+*.9xx merge=union
+*.1xxx merge=union
+*.2xxx merge=union
+*.3xxx merge=union
+*.4xxx merge=union
+*.5xxx merge=union
+*.6xxx merge=union
+*.7xxx merge=union
+*.8xxx merge=union
+*.9xxx merge=union
+*.1xxxx merge=union
+*.2xxxx merge=union
+*.3xxxx merge=union
+*.4xxxx merge=union
+*.5xxxx merge=union
+*.6xxxx merge=union
+*.7xxxx merge=union
+*.8xxxx merge=union
+*.9xxxx merge=union

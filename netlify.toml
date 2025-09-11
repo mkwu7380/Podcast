@@ -1,26 +1,76 @@
+# This file tells Netlify how to build and serve your site
+
 [build]
-  base = "."
-  publish = "client/dist"
-  command = "npm run netlify-build"
+  # Base directory for the build
+  base = "client"
+  # Directory containing the built files
+  publish = "dist"
+  # Command to build the site
+  command = "npm install && npm run build"
 
 [build.environment]
+  # Set Node.js version
   NODE_VERSION = "16.14.0"
+  # Set npm flags
+  NPM_FLAGS = "--version"
+  # Set environment to production
   NODE_ENV = "production"
-  CI = false
+  # Disable CI to prevent build issues
+  CI = "false"
+  # Disable telemetry to speed up builds
+  NEXT_TELEMETRY_DISABLED = "1"
+  # Optimize npm cache
+  NPM_CONFIG_CACHE = "/opt/build/.npm"
 
+# Production context settings
+[context.production]
+  command = "npm install && npm run build"
+  environment = { 
+    NODE_ENV = "production",
+    NODE_OPTIONS = "--max_old_space_size=1024"
+  }
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://podcast-production-9a44.up.railway.app;"
+
+# API redirects
 [[redirects]]
   from = "/api/*"
   to = "https://podcast-production-9a44.up.railway.app/api/:splat"
   status = 200
   force = true
+  headers = { Access-Control-Allow-Origin = "*" }
 
+# WebSocket redirects
 [[redirects]]
   from = "/ws/*"
   to = "https://podcast-production-9a44.up.railway.app/ws/:splat"
   status = 200
   force = true
+  headers = { Access-Control-Allow-Origin = "*" }
 
+# SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Cache optimization plugin
+[[plugins]]
+  package = "@netlify/plugin-cache"
+
+# Lighthouse plugin for performance monitoring
+[[plugins]]
+  package = "@netlify/plugin-lighthouse"
+  [plugins.inputs.thresholds]
+    performance = 0.8
+    accessibility = 0.9
+    best-practices = 0.9
+    seo = 0.9

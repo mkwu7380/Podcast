@@ -1,0 +1,88 @@
+{
+  "version": 2,
+  "name": "podcast-client",
+  "public": true,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://podcast-production-9a44.up.railway.app/api/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/ws/(.*)",
+      "dest": "wss://podcast-production-9a44.up.railway.app/ws/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "*"
+      }
+    },
+    {
+      "src": "^/(.*)\.(js|css|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot)$",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "^/static/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "^/.*",
+      "dest": "/index.html"
+    }
+  ],
+  "build": {
+    "env": {
+      "NODE_VERSION": "16.14.0",
+      "NPM_FLAGS": "--version",
+      "NODE_ENV": "production",
+      "CI": "false",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "env": {
+    "REACT_APP_API_URL": "/api",
+    "REACT_APP_WS_URL": "wss://podcast-production-9a44.up.railway.app/ws"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://podcast-production-9a44.up.railway.app;"
+        }
+      ]
+    }
+  ]
+}

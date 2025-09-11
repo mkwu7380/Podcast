@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: podcast-client
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=/api
+      - REACT_APP_WS_URL=wss://podcast-production-9a44.up.railway.app/ws
+      - REACT_APP_GA_TRACKING_ID=
+      - REACT_APP_SENTRY_DSN=
+      - REACT_APP_VERSION=1.0.0
+      - REACT_APP_NAME=podcast-client
+    networks:
+      - podcast-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # If you want to run a local backend for development
+  # Uncomment and configure these services as needed
+  # api:
+  #   image: your-api-image
+  #   ports:
+  #     - "3001:3001"
+  #   environment:
+  #     - NODE_ENV=development
+  #     - PORT=3001
+  #   networks:
+  #     - podcast-network
+  #   volumes:
+  #     - ./api:/app
+  #     - /app/node_modules
+
+  # Database (example with PostgreSQL)
+  # db:
+  #   image: postgres:13
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_DB=podcast
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - podcast-network
+
+networks:
+  podcast-network:
+    driver: bridge
+
+# volumes:
+#   postgres_data:

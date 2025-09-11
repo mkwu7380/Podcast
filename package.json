@@ -8,7 +8,8 @@
     "dev": "nodemon index.js",
     "client": "cd client && npm start",
     "build": "cd client && npm install && npm run build",
-    "netlify-build": "rm -rf node_modules client/node_modules && cd client && npm ci --production=false && npm run build"
+    "netlify-build": "./build.sh",
+    "test": "echo \"Error: no test specified\" && exit 0"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
