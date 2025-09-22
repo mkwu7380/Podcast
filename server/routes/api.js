@@ -9,7 +9,7 @@ const upload = require('../middleware/uploadMiddleware');
  * @swagger
  * /api/search:
  *   post:
- *     summary: Search for podcasts
+ *     summary: Search for podcasts with intelligent reranking
  *     tags: [Podcasts]
  *     requestBody:
  *       required: true
@@ -23,10 +23,58 @@ const upload = require('../middleware/uploadMiddleware');
  *                 description: Name of the podcast to search for
  *               limit:
  *                 type: number
- *                 description: Maximum number of results
+ *                 description: Maximum number of results to return
+ *               enableReranking:
+ *                 type: boolean
+ *                 description: Whether to apply intelligent reranking
+ *                 default: true
+ *               rankingStrategy:
+ *                 type: string
+ *                 enum: [semantic, popularity, recency, hybrid]
+ *                 description: Reranking strategy to apply
+ *                 default: hybrid
+ *               rankingWeights:
+ *                 type: object
+ *                 description: Custom weights for hybrid ranking
+ *                 properties:
+ *                   semantic:
+ *                     type: number
+ *                   popularity:
+ *                     type: number
+ *                   recency:
+ *                     type: number
  *     responses:
  *       200:
- *         description: Successful search
+ *         description: Successful search with reranked results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     podcasts:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                     searchQuery:
+ *                       type: string
+ *                     totalFound:
+ *                       type: number
+ *                     returned:
+ *                       type: number
+ *                     reranking:
+ *                       type: object
+ *                       properties:
+ *                         enabled:
+ *                           type: boolean
+ *                         strategy:
+ *                           type: string
+ *                         applied:
+ *                           type: boolean
  *       400:
  *         description: Invalid request
  *       404:
@@ -246,6 +294,138 @@ router.post('/summary/episode-url', summaryController.summarizeEpisodeFromUrl);
 
 /**
  * @swagger
+ * /api/summary/batch-episodes:
+ *   post:
+ *     summary: Batch summarize episodes with intelligent prioritization
+ *     tags: [Summary]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - feedUrl
+ *             properties:
+ *               feedUrl:
+ *                 type: string
+ *                 description: RSS feed URL of the podcast
+ *               maxEpisodes:
+ *                 type: number
+ *                 description: Maximum number of episodes to process
+ *                 default: 5
+ *               summaryType:
+ *                 type: string
+ *                 enum: [brief, comprehensive, detailed, bullet-points]
+ *                 description: Type of summary to generate
+ *                 default: comprehensive
+ *               rankingStrategy:
+ *                 type: string
+ *                 enum: [relevance, recency, engagement, duration, hybrid]
+ *                 description: Episode prioritization strategy
+ *                 default: hybrid
+ *               query:
+ *                 type: string
+ *                 description: Query for relevance-based prioritization
+ *               userPreferences:
+ *                 type: object
+ *                 description: User preferences for episode filtering
+ *               processHighPriorityOnly:
+ *                 type: boolean
+ *                 description: Only process high-priority episodes
+ *                 default: false
+ *     responses:
+ *       200:
+ *         description: Episodes summarized with priority information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     summaries:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                     processingStats:
+ *                       type: object
+ *                     priorityBreakdown:
+ *                       type: object
+ *                     recommendations:
+ *                       type: object
+ *       400:
+ *         description: Invalid request
+ *       500:
+ *         description: Server error
+ */
+router.post('/summary/batch-episodes', summaryController.batchSummarizeEpisodes);
+
+/**
+ * @swagger
+ * /api/summary/queue:
+ *   post:
+ *     summary: Get intelligent summarization queue with episode priorities
+ *     tags: [Summary]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - feedUrl
+ *             properties:
+ *               feedUrl:
+ *                 type: string
+ *                 description: RSS feed URL of the podcast
+ *               strategy:
+ *                 type: string
+ *                 enum: [relevance, recency, engagement, duration, hybrid]
+ *                 description: Prioritization strategy
+ *                 default: hybrid
+ *               query:
+ *                 type: string
+ *                 description: Query for relevance scoring
+ *               maxQueueSize:
+ *                 type: number
+ *                 description: Maximum episodes in queue
+ *                 default: 20
+ *     responses:
+ *       200:
+ *         description: Summarization queue with priorities
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     queue:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                     queueByPriority:
+ *                       type: object
+ *                     stats:
+ *                       type: object
+ *                     estimatedTotalTime:
+ *                       type: number
+ *       400:
+ *         description: Invalid request
+ *       500:
+ *         description: Server error
+ */
+router.post('/summary/queue', summaryController.getSummarizationQueue);
+
+/**
+ * @swagger
  * /api/summary/status:
  *   get:
  *     summary: Get AI summarization service status
@@ -275,5 +455,77 @@ router.post('/summary/episode-url', summaryController.summarizeEpisodeFromUrl);
  *                       type: boolean
  */
 router.get('/summary/status', summaryController.getServiceStatus);
+
+/**
+ * @swagger
+ * /api/ranking-strategies:
+ *   get:
+ *     summary: Get available reranking strategies
+ *     tags: [Podcasts]
+ *     responses:
+ *       200:
+ *         description: Available ranking strategies
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     strategies:
+ *                       type: object
+ *                       properties:
+ *                         SEMANTIC:
+ *                           type: string
+ *                         POPULARITY:
+ *                           type: string
+ *                         RECENCY:
+ *                           type: string
+ *                         HYBRID:
+ *                           type: string
+ *       500:
+ *         description: Server error
+ */
+router.get('/ranking-strategies', podcastController.getRankingStrategies);
+
+/**
+ * @swagger
+ * /api/episode-ranking-strategies:
+ *   get:
+ *     summary: Get available episode ranking strategies for processing pipeline
+ *     tags: [Podcasts]
+ *     responses:
+ *       200:
+ *         description: Available episode ranking strategies
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     strategies:
+ *                       type: object
+ *                       properties:
+ *                         RELEVANCE:
+ *                           type: string
+ *                         RECENCY:
+ *                           type: string
+ *                         ENGAGEMENT:
+ *                           type: string
+ *                         DURATION:
+ *                           type: string
+ *                         HYBRID:
+ *                           type: string
+ *       500:
+ *         description: Server error
+ */
+router.get('/episode-ranking-strategies', podcastController.getEpisodeRankingStrategies);
 
 module.exports = router;

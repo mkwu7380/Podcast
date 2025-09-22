@@ -2,6 +2,8 @@ const summaryService = require('../services/summaryService');
 const summaryServiceNew = require('../services/summaryServiceNew');
 const freeSummaryService = require('../services/freeSummaryService');
 const transcriptionService = require('../services/transcriptionService');
+const episodeRerankingService = require('../services/episodeRerankingService');
+const { fetchEpisodes } = require('../../services/podcastService');
 const { createResponse, createErrorResponse } = require('../utils/responseHelper');
 
 /**
@@ -357,6 +359,374 @@ class SummaryController {
         error: error.message
       }));
     }
+  }
+
+  /**
+   * Batch summarize episodes with intelligent prioritization
+   * @param {Request} req - Express request object
+   * @param {Response} res - Express response object
+   */
+  async batchSummarizeEpisodes(req, res) {
+    try {
+      const {
+        feedUrl,
+        maxEpisodes = 5,
+        summaryType = 'comprehensive',
+        rankingStrategy = 'hybrid',
+        query = '',
+        userPreferences = {},
+        processHighPriorityOnly = false
+      } = req.body;
+
+      if (!feedUrl) {
+        return res.status(400).json(createErrorResponse('Feed URL is required'));
+      }
+
+      console.log(`🔄 Starting batch summarization with ${rankingStrategy} prioritization`);
+
+      // Step 1: Get all episodes from the feed
+      const allEpisodes = await fetchEpisodes(feedUrl, 0);
+      
+      if (!allEpisodes || allEpisodes.length === 0) {
+        return res.json(createResponse({
+          summaries: [],
+          message: 'No episodes found in podcast feed',
+          processingStats: {
+            totalEpisodes: 0,
+            processed: 0,
+            skipped: 0
+          }
+        }));
+      }
+
+      // Step 2: Apply intelligent reranking for processing priority
+      const rankedEpisodes = await episodeRerankingService.rerankEpisodes(allEpisodes, {
+        strategy: rankingStrategy,
+        query,
+        userPreferences
+      });
+
+      console.log(`📊 Episodes reranked: ${rankedEpisodes.length} total`);
+
+      // Step 3: Filter episodes based on priority if requested
+      let episodesToProcess = rankedEpisodes.slice(0, maxEpisodes);
+      
+      if (processHighPriorityOnly) {
+        episodesToProcess = rankedEpisodes.filter(
+          ep => ep._processingPriority?.priority === 'high'
+        ).slice(0, maxEpisodes);
+      }
+
+      // Step 4: Process episodes in priority order
+      const summaryResults = [];
+      const processingErrors = [];
+      const useFreeSummary = !process.env.GEMINI_API_KEY;
+
+      console.log(`🎯 Processing ${episodesToProcess.length} episodes for summarization`);
+
+      for (let i = 0; i < episodesToProcess.length; i++) {
+        const episode = episodesToProcess[i];
+        const priority = episode._processingPriority?.priority || 'medium';
+        
+        console.log(`📝 Processing episode ${i + 1}/${episodesToProcess.length} (${priority} priority): ${episode.title?.substring(0, 50)}...`);
+
+        try {
+          // Check if episode has valid audio URL
+          if (!episode.enclosure?.url) {
+            console.warn(`⚠️ Skipping episode without audio URL: ${episode.title}`);
+            processingErrors.push({
+              episode: episode.title,
+              error: 'No audio URL available',
+              priority: priority
+            });
+            continue;
+          }
+
+          // Process this episode
+          const summaryResult = await this.processSingleEpisodeForBatch(
+            episode,
+            summaryType,
+            useFreeSummary
+          );
+
+          summaryResults.push({
+            episode: {
+              title: episode.title,
+              pubDate: episode.pubDate,
+              duration: episode.itunes?.duration,
+              audioUrl: episode.enclosure.url
+            },
+            summary: summaryResult,
+            processingPriority: episode._processingPriority,
+            scores: episode._scores,
+            processedAt: new Date().toISOString()
+          });
+
+        } catch (error) {
+          console.error(`❌ Failed to process episode: ${episode.title}`, error.message);
+          processingErrors.push({
+            episode: episode.title,
+            error: error.message,
+            priority: priority
+          });
+        }
+      }
+
+      // Step 5: Organize results by priority
+      const resultsByPriority = {
+        high: summaryResults.filter(r => r.processingPriority?.priority === 'high'),
+        medium: summaryResults.filter(r => r.processingPriority?.priority === 'medium'),
+        low: summaryResults.filter(r => r.processingPriority?.priority === 'low')
+      };
+
+      console.log(`✅ Batch summarization completed: ${summaryResults.length} successful, ${processingErrors.length} errors`);
+
+      return res.json(createResponse({
+        summaries: summaryResults,
+        processingStats: {
+          totalEpisodes: allEpisodes.length,
+          ranked: rankedEpisodes.length,
+          processed: summaryResults.length,
+          errors: processingErrors.length,
+          strategy: rankingStrategy
+        },
+        priorityBreakdown: {
+          high: resultsByPriority.high.length,
+          medium: resultsByPriority.medium.length,
+          low: resultsByPriority.low.length
+        },
+        errors: processingErrors,
+        recommendations: {
+          nextToProcess: rankedEpisodes
+            .slice(maxEpisodes, maxEpisodes + 3)
+            .map(ep => ({
+              title: ep.title,
+              priority: ep._processingPriority?.priority,
+              score: ep._processingPriority?.finalScore,
+              reason: this.getProcessingRecommendation(ep)
+            }))
+        }
+      }));
+
+    } catch (error) {
+      console.error('Batch summarization error:', error);
+      return res.status(500).json(createErrorResponse('Failed to batch summarize episodes'));
+    }
+  }
+
+  /**
+   * Process a single episode for batch summarization
+   * @param {Object} episode - Episode object
+   * @param {string} summaryType - Type of summary to generate
+   * @param {boolean} useFreeSummary - Whether to use free summary service
+   * @returns {Object} Summary result
+   */
+  async processSingleEpisodeForBatch(episode, summaryType, useFreeSummary) {
+    const audioUrl = episode.enclosure.url;
+    const episodeInfo = {
+      title: episode.title,
+      pubDate: episode.pubDate,
+      duration: episode.itunes?.duration
+    };
+
+    // Download and transcribe audio
+    const axios = require('axios');
+    const fs = require('fs');
+    const path = require('path');
+    
+    const tempDir = path.join(__dirname, '../../uploads');
+    const tempFile = path.join(tempDir, `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.mp3`);
+
+    try {
+      // Download with timeout for batch processing
+      const response = await axios({
+        method: 'get',
+        url: audioUrl,
+        responseType: 'stream',
+        timeout: 60000, // 1 minute timeout for batch processing
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        }
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Download failed: HTTP ${response.status}`);
+      }
+
+      // Save to temp file
+      const writer = fs.createWriteStream(tempFile);
+      response.data.pipe(writer);
+
+      await new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+      });
+
+      // Transcribe
+      const transcript = await transcriptionService.transcribeAudio(tempFile);
+      
+      if (!transcript) {
+        throw new Error('Transcription failed');
+      }
+
+      // Generate summary
+      const summaryResult = useFreeSummary
+        ? await freeSummaryService.generateEpisodeSummary(transcript, episodeInfo)
+        : await summaryService.generateEpisodeSummary(transcript, episodeInfo);
+
+      return {
+        summary: summaryResult,
+        transcript: transcript,
+        transcriptLength: transcript.length
+      };
+
+    } finally {
+      // Clean up temp file
+      try {
+        if (fs.existsSync(tempFile)) {
+          fs.unlinkSync(tempFile);
+        }
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup batch temp file:', cleanupError.message);
+      }
+    }
+  }
+
+  /**
+   * Get processing recommendation for an episode
+   * @param {Object} episode - Episode with scoring data
+   * @returns {string} Recommendation reason
+   */
+  getProcessingRecommendation(episode) {
+    const scores = episode._scores;
+    if (!scores) return 'High overall relevance';
+
+    const reasons = [];
+    if (scores.recency > 0.8) reasons.push('Very recent');
+    if (scores.relevance > 0.8) reasons.push('Highly relevant');
+    if (scores.engagement > 0.8) reasons.push('High engagement');
+    if (scores.duration > 0.8) reasons.push('Optimal duration');
+
+    return reasons.length > 0 ? reasons.join(', ') : 'Balanced quality metrics';
+  }
+
+  /**
+   * Get summarization queue with episode priorities
+   * @param {Request} req - Express request object
+   * @param {Response} res - Express response object
+   */
+  async getSummarizationQueue(req, res) {
+    try {
+      const {
+        feedUrl,
+        strategy = 'hybrid',
+        query = '',
+        maxQueueSize = 20
+      } = req.body;
+
+      if (!feedUrl) {
+        return res.status(400).json(createErrorResponse('Feed URL is required'));
+      }
+
+      // Get all episodes
+      const allEpisodes = await fetchEpisodes(feedUrl, 0);
+      
+      if (!allEpisodes || allEpisodes.length === 0) {
+        return res.json(createResponse({
+          queue: [],
+          message: 'No episodes found for summarization queue'
+        }));
+      }
+
+      // Rank episodes for summarization
+      const rankedEpisodes = await episodeRerankingService.rerankEpisodes(allEpisodes, {
+        strategy,
+        query
+      });
+
+      // Create summarization queue
+      const queue = rankedEpisodes.slice(0, maxQueueSize).map((episode, index) => ({
+        queuePosition: index + 1,
+        title: episode.title,
+        pubDate: episode.pubDate,
+        duration: episode.itunes?.duration,
+        audioUrl: episode.enclosure?.url,
+        priority: episode._processingPriority?.priority,
+        score: episode._processingPriority?.finalScore,
+        estimatedProcessingTime: this.estimateProcessingTime(episode),
+        canProcess: !!episode.enclosure?.url,
+        recommendation: this.getProcessingRecommendation(episode)
+      }));
+
+      // Group by priority
+      const queueByPriority = {
+        high: queue.filter(item => item.priority === 'high'),
+        medium: queue.filter(item => item.priority === 'medium'),
+        low: queue.filter(item => item.priority === 'low'),
+        deferred: queue.filter(item => item.priority === 'deferred')
+      };
+
+      return res.json(createResponse({
+        queue,
+        queueByPriority,
+        stats: {
+          totalEpisodes: allEpisodes.length,
+          queuedForProcessing: queue.length,
+          canProcess: queue.filter(item => item.canProcess).length,
+          strategy: strategy
+        },
+        estimatedTotalTime: queue.reduce((total, item) => total + item.estimatedProcessingTime, 0)
+      }));
+
+    } catch (error) {
+      console.error('Summarization queue error:', error);
+      return res.status(500).json(createErrorResponse('Failed to create summarization queue'));
+    }
+  }
+
+  /**
+   * Estimate processing time for an episode
+   * @param {Object} episode - Episode object
+   * @returns {number} Estimated processing time in minutes
+   */
+  estimateProcessingTime(episode) {
+    // Base processing time: 5 minutes
+    let estimatedTime = 5;
+
+    // Adjust based on episode duration if available
+    if (episode.itunes?.duration) {
+      const duration = this.parseDuration(episode.itunes.duration);
+      if (duration > 0) {
+        // Longer episodes take more time (roughly 1:5 ratio)
+        estimatedTime = Math.max(5, Math.ceil(duration / 300)); // 5 minutes processing per hour of audio
+      }
+    }
+
+    // Adjust based on content complexity (high engagement = more complex)
+    if (episode._scores?.engagement > 0.8) {
+      estimatedTime = Math.ceil(estimatedTime * 1.2);
+    }
+
+    return estimatedTime;
+  }
+
+  /**
+   * Parse duration string to seconds
+   * @param {string} duration - Duration string
+   * @returns {number} Duration in seconds
+   */
+  parseDuration(duration) {
+    if (!duration) return 0;
+    
+    const parts = duration.split(':').map(p => parseInt(p) || 0);
+    
+    if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    } else if (parts.length === 2) {
+      return parts[0] * 60 + parts[1];
+    }
+    
+    return 0;
   }
 
   /**
